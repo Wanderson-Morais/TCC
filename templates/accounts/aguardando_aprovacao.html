@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Aguardando Aprovação{% endblock %}
+{% block page_title %}Aguardando Aprovação{% endblock %}
+{% block content %}
+<div class="empty-state" style="margin-top:3rem;">
+  <div class="icon">⏳</div>
+  <h2>Conta em análise</h2>
+  <p>Seu cadastro foi recebido. O administrador irá revisar e aprovar sua conta em breve.</p>
+  <a href="{% url 'logout' %}" class="btn btn-outline">Sair</a>
+</div>
+{% endblock %}

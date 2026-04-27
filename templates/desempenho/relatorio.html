@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Relatório — {{ crianca.nome }}{% endblock %}
+{% block page_title %}Relatório: {{ crianca.nome }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Relatório — {{ crianca.nome }}</h1>
+  <a href="{% url 'detalhe_crianca' crianca.pk %}" class="btn btn-outline btn-sm">← Voltar</a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-label">Total de tentativas</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-value">{{ acertos }}</div>
+    <div class="stat-label">Acertos</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-value">{{ erros }}</div>
+    <div class="stat-label">Erros</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-value">{{ taxa }}%</div>
+    <div class="stat-label">Taxa de acerto</div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="card">
+  <div class="card-title">📈 Taxa de Acerto Geral</div>
+  <div class="progress" style="height:18px;">
+    <div class="progress-bar {% if taxa >= 70 %}success{% elif taxa < 40 %}danger{% endif %}"
+         style="width:{{ taxa }}%;"></div>
+  </div>
+  <div style="font-size:.85rem;color:#6b7a8d;margin-top:.4rem;">{{ taxa }}% de aproveitamento</div>
+</div>
+
+<!-- Por atividade -->
+{% if is_psicologo %}
+<div class="card">
+  <div class="card-title">🎯 Por Atividade</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Atividade</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr></thead>
+      <tbody>
+        {% for row in por_atividade %}
+        <tr>
+          <td><a href="{% url 'detalhe_atividade' row.atividade__pk %}">{{ row.atividade__titulo }}</a></td>
+          <td>{{ row.total }}</td>
+          <td>{{ row.acertos }}</td>
+          <td>
+            {% widthratio row.acertos row.total 100 as pct %}
+            <div class="progress" style="height:8px;width:80px;display:inline-block;vertical-align:middle;">
+              <div class="progress-bar" style="width:{{ pct }}%;"></div>
+            </div>
+            {{ pct }}%
+          </td>
+          <td>
+            <a href="{% url 'executar_atividade' crianca.pk row.atividade__pk %}" class="btn btn-success btn-sm">▶ Executar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Histórico -->
+{% if desempenhos %}
+<div class="card">
+  <div class="card-title">🕐 Histórico Recente</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Atividade</th><th>Sessão</th><th>Resultado</th><th>Tempo (s)</th></tr></thead>
+      <tbody>
+        {% for d in desempenhos %}
+        <tr>
+          <td style="font-size:.83rem;color:#6b7a8d;">{{ d.created_at|date:"d/m/Y H:i" }}</td>
+          <td>{{ d.atividade.titulo }}</td>
+          <td>{{ d.sessao.titulo|default:'—' }}</td>
+          <td>
+            {% if d.correto %}
+              <span class="badge badge-success">Acerto ✔</span>
+            {% else %}
+              <span class="badge badge-danger">Erro ✖</span>
+            {% endif %}
+          </td>
+          <td style="color:#6b7a8d;">{{ d.tempo_resposta|default:'—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Crianças{% endblock %}
+{% block page_title %}Crianças{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Crianças</h1>
+  {% if user.role == 'psicologo' or user.is_superuser %}
+    <a href="{% url 'criar_crianca' %}" class="btn btn-primary">+ Nova Criança</a>
+  {% endif %}
+</div>
+
+{% if criancas %}
+  <div class="crianca-grid">
+    {% for c in criancas %}
+    <a href="{% url 'detalhe_crianca' c.pk %}" class="crianca-card">
+      {% if c.foto %}
+        <img class="crianca-card-img" src="{{ c.foto.url }}" alt="{{ c.nome }}">
+      {% else %}
+        <div class="crianca-card-img-placeholder">👧</div>
+      {% endif %}
+      <div class="crianca-card-body">
+        <div class="crianca-card-nome">{{ c.nome }}</div>
+        <div class="crianca-card-info">{{ c.idade }} anos · {{ c.psicologo.get_full_name|default:c.psicologo.username }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">👧</div>
+    <p>Nenhuma criança cadastrada.</p>
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'criar_crianca' %}" class="btn btn-primary">+ Cadastrar Criança</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

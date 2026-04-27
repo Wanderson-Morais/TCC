@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Usuários{% endblock %}
+{% block page_title %}Gerenciar Usuários{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Usuários</h1>
+</div>
+
+{% regroup usuarios by get_role_display as role_groups %}
+{% for group in role_groups %}
+  <div class="card">
+    <div class="card-title">{{ group.grouper }}s</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th><th>Usuário</th><th>E-mail</th>
+            {% if group.list.0.role == 'psicologo' %}<th>CRP</th><th>Status</th>{% endif %}
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in group.list %}
+          <tr>
+            <td>{{ u.get_full_name|default:'—' }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.email|default:'—' }}</td>
+            {% if u.role == 'psicologo' %}
+              <td>{{ u.crp|default:'—' }}</td>
+              <td>
+                {% if u.aprovado %}
+                  <span class="badge badge-success">Aprovado</span>
+                {% else %}
+                  <span class="badge badge-warning">Pendente</span>
+                {% endif %}
+              </td>
+            {% endif %}
+            <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+              {% if u.role == 'psicologo' %}
+                {% if not u.aprovado %}
+                  <a href="{% url 'aprovar_psicologo' u.pk %}" class="btn btn-success btn-sm">✔ Aprovar</a>
+                {% else %}
+                  <a href="{% url 'reprovar_psicologo' u.pk %}" class="btn btn-warning btn-sm">✖ Suspender</a>
+                {% endif %}
+              {% endif %}
+              <a href="{% url 'editar_usuario' u.pk %}" class="btn btn-outline btn-sm">Editar</a>
+              <a href="{% url 'excluir_usuario' u.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="color:#6b7a8d;text-align:center;">Nenhum usuário.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

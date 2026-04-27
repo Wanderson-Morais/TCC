@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Login | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon">🧠</div>
+      <h1>EmoTEA</h1>
+      <p>Plataforma de Apoio Terapêutico</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>{{ form.username.label }}</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div class="form-error">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+      </div>
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
+        Entrar
+      </button>
+    </form>
+
+    <div style="margin-top:1.5rem;text-align:center;font-size:.87rem;color:#6b7a8d;">
+      <div style="margin-bottom:.5rem;">
+        Psicólogo? <a href="{% url 'registro_psicologo' %}">Criar conta</a>
+      </div>
+      <div>
+        Responsável? <a href="{% url 'registro_responsavel' %}">Criar conta</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

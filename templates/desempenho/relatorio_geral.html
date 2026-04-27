@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Relatórios{% endblock %}
+{% block page_title %}Relatórios Gerais{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Relatórios</h1>
+</div>
+
+{% if dados %}
+<div class="card">
+  <div class="card-title">📊 Desempenho por Criança</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Criança</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for d in dados %}
+        <tr>
+          <td>
+            <a href="{% url 'detalhe_crianca' d.crianca.pk %}" style="font-weight:500;">
+              {{ d.crianca.nome }}
+            </a>
+          </td>
+          <td>{{ d.total }}</td>
+          <td>{{ d.acertos }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <div class="progress" style="width:80px;height:8px;display:inline-block;">
+                <div class="progress-bar {% if d.taxa >= 70 %}success{% elif d.taxa < 40 %}danger{% endif %}"
+                     style="width:{{ d.taxa }}%;"></div>
+              </div>
+              {{ d.taxa }}%
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'relatorio_crianca' d.crianca.pk %}" class="btn btn-outline btn-sm">
+              Ver relatório
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="icon">📊</div>
+  <p>Nenhum dado de desempenho ainda. Execute atividades com as crianças para ver os relatórios.</p>
+</div>
+{% endif %}
+
+{% endblock %}

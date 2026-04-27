@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Editar Usuário{% endblock %}
+{% block page_title %}Editar Usuário{% endblock %}
+{% block content %}
+<div style="max-width:520px;">
+  <div class="page-header">
+    <h1>Editar: {{ usuario.get_full_name|default:usuario.username }}</h1>
+    <a href="{% url 'admin_usuarios' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

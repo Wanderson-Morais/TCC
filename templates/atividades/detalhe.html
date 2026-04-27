@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{{ atividade.titulo }}{% endblock %}
+{% block page_title %}{{ atividade.titulo }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>{{ atividade.titulo }}</h1>
+  <div style="display:flex;gap:.5rem;">
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'editar_atividade' atividade.pk %}" class="btn btn-outline btn-sm">Editar</a>
+      <a href="{% url 'excluir_atividade' atividade.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+    {% endif %}
+    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+  <div class="card">
+    <div class="card-title">📝 Informações</div>
+    <p style="font-size:.9rem;margin-bottom:.5rem;"><strong>Pergunta:</strong> {{ atividade.pergunta }}</p>
+    <p style="font-size:.9rem;margin-bottom:.5rem;"><strong>Emoção Correta:</strong>
+      <span class="badge badge-success">{{ atividade.get_emocao_correta_display }}</span>
+    </p>
+    {% if atividade.descricao %}
+      <p style="font-size:.88rem;color:#555;margin-top:.5rem;">{{ atividade.descricao }}</p>
+    {% endif %}
+    <p style="font-size:.8rem;color:#6b7a8d;margin-top:.75rem;">
+      Criada em {{ atividade.created_at|date:"d/m/Y" }} por {{ atividade.psicologo.get_full_name|default:atividade.psicologo.username }}
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🖼️ Imagens ({{ imagens.count }})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+      {% for img in imagens %}
+      <div style="text-align:center;">
+        <img src="{{ img.imagem.url }}"
+             style="width:90px;height:90px;object-fit:cover;border-radius:10px;
+                    border:3px solid {% if img.correta %}#5cb85c{% else %}#dde3ec{% endif %};">
+        <div style="font-size:.75rem;margin-top:.25rem;
+                    color:{% if img.correta %}#2d7a3a{% else %}#6b7a8d{% endif %};">
+          {{ img.get_emocao_display }}
+          {% if img.correta %} ✔{% endif %}
+        </div>
+      </div>
+      {% empty %}
+        <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma imagem adicionada.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Atividades{% endblock %}
+{% block page_title %}Atividades{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Atividades</h1>
+  {% if user.role == 'psicologo' %}
+    <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Nova Atividade</a>
+  {% endif %}
+</div>
+
+{% if atividades %}
+  <div class="atividade-grid">
+    {% for a in atividades %}
+    <div class="atividade-card">
+      <div class="atividade-card-title">{{ a.titulo }}</div>
+      <div class="atividade-card-pergunta">"{{ a.pergunta }}"</div>
+      <div style="font-size:.82rem;color:#6b7a8d;">
+        {{ a.imagens.count }} imagem(ns) · Emoção: <strong>{{ a.get_emocao_correta_display }}</strong>
+      </div>
+      <div class="atividade-card-actions">
+        <a href="{% url 'detalhe_atividade' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+        {% if user.role == 'psicologo' %}
+          <a href="{% url 'editar_atividade' a.pk %}" class="btn btn-outline btn-sm">Editar</a>
+          <a href="{% url 'excluir_atividade' a.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">🎯</div>
+    <p>Nenhuma atividade cadastrada.</p>
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Criar Atividade</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

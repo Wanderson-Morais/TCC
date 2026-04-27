@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EmoTEA{% endblock %} | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <span class="icon">🧠</span>
+      EmoTEA
+    </div>
+    <div class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>
+        <span class="nav-icon">🏠</span> Início
+      </a>
+
+      {% if user.role == 'psicologo' or user.is_superuser %}
+      <a href="{% url 'lista_criancas' %}" {% if 'criancas' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">👧</span> Crianças
+      </a>
+      <a href="{% url 'lista_atividades' %}" {% if 'atividades' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">🎯</span> Atividades
+      </a>
+      <a href="{% url 'lista_sessoes' %}" {% if 'sessoes' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">📋</span> Sessões
+      </a>
+      <a href="{% url 'relatorio_geral' %}" {% if 'desempenho' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">📊</span> Relatórios
+      </a>
+      {% endif %}
+
+      {% if user.role == 'responsavel' %}
+      <a href="{% url 'lista_criancas' %}" {% if 'criancas' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">👧</span> Minhas Crianças
+      </a>
+      <a href="{% url 'lista_sessoes' %}" {% if 'sessoes' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">📋</span> Sessões
+      </a>
+      {% endif %}
+
+      {% if user.role == 'admin' or user.is_superuser %}
+      <a href="{% url 'admin_usuarios' %}" {% if 'admin/usuarios' in request.path %}class="active"{% endif %}>
+        <span class="nav-icon">👥</span> Usuários
+      </a>
+      <a href="{% url 'lista_criancas' %}">
+        <span class="nav-icon">👧</span> Crianças
+      </a>
+      {% endif %}
+    </div>
+    <div class="sidebar-footer">
+      <div>{{ user.get_full_name|default:user.username }}</div>
+      <div>{{ user.get_role_display }}</div>
+      <a href="{% url 'logout' %}">Sair</a>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <button id="sidebar-toggle" style="background:none;border:none;font-size:1.3rem;cursor:pointer;display:none;">☰</button>
+        <span class="topbar-title">{% block page_title %}{% endblock %}</span>
+      </div>
+      <div class="topbar-user">
+        {{ user.get_full_name|default:user.username }}
+        &nbsp;·&nbsp;
+        <a href="{% url 'logout' %}">Sair</a>
+      </div>
+    </header>
+
+    <main class="content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}" data-autohide>{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box"></div>
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

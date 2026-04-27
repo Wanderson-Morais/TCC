@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div style="max-width:680px;">
+  <div class="page-header">
+    <h1>{{ titulo }}</h1>
+    <a href="{% url 'lista_sessoes' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {% if field.name == 'atividades' or field.name == 'criancas' %}
+            <div class="checkbox-group">{{ field }}</div>
+          {% else %}
+            {{ field }}
+          {% endif %}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+        <button type="submit" class="btn btn-primary">Salvar Sessão</button>
+        {% if sessao %}
+          <a href="{% url 'detalhe_sessao' sessao.pk %}" class="btn btn-outline">Cancelar</a>
+        {% else %}
+          <a href="{% url 'lista_sessoes' %}" class="btn btn-outline">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

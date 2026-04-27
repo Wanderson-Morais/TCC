@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Excluir Criança{% endblock %}
+{% block page_title %}Excluir Criança{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card">
+    <p>Tem certeza que deseja excluir <strong>{{ crianca.nome }}</strong>?</p>
+    <p style="color:#e05252;font-size:.88rem;margin-top:.5rem;">Todos os registros de desempenho também serão excluídos. Esta ação não pode ser desfeita.</p>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+      <form method="post">{% csrf_token %}<button type="submit" class="btn btn-danger">Excluir</button></form>
+      <a href="{% url 'detalhe_crianca' crianca.pk %}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

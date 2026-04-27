@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ crianca.nome }}{% endblock %}
+{% block page_title %}{{ crianca.nome }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>{{ crianca.nome }}</h1>
+  <div style="display:flex;gap:.5rem;">
+    {% if user.role == 'psicologo' or user.is_superuser %}
+      <a href="{% url 'editar_crianca' crianca.pk %}" class="btn btn-outline btn-sm">✏️ Editar</a>
+      <a href="{% url 'excluir_crianca' crianca.pk %}" class="btn btn-danger btn-sm">🗑 Excluir</a>
+    {% endif %}
+    <a href="{% url 'lista_criancas' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:260px 1fr;gap:1.5rem;align-items:start;">
+
+  <div>
+    <div class="card" style="text-align:center;padding:1.5rem 1rem;">
+      {% if crianca.foto %}
+        <img src="{{ crianca.foto.url }}" alt="{{ crianca.nome }}"
+             style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;">
+      {% else %}
+        <div style="font-size:5rem;margin-bottom:.5rem;">👧</div>
+      {% endif %}
+      <div style="font-size:1.1rem;font-weight:700;">{{ crianca.nome }}</div>
+      <div style="color:#6b7a8d;font-size:.88rem;margin-top:.2rem;">{{ crianca.idade }} anos</div>
+      <div style="color:#6b7a8d;font-size:.85rem;margin-top:.5rem;">Nasc.: {{ crianca.data_nascimento|date:"d/m/Y" }}</div>
+      {% if user.role == 'psicologo' or user.is_superuser %}
+      <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem;">
+        <a href="{% url 'editar_crianca' crianca.pk %}" class="btn btn-outline btn-sm">✏️ Editar</a>
+        <a href="{% url 'excluir_crianca' crianca.pk %}" class="btn btn-danger btn-sm">🗑 Excluir</a>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if crianca.observacoes %}
+    <div class="card">
+      <div class="card-title">📝 Observações</div>
+      <p style="font-size:.9rem;color:#444;">{{ crianca.observacoes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-title">👤 Responsáveis</div>
+      {% for r in crianca.responsaveis.all %}
+        <div style="font-size:.9rem;margin-bottom:.3rem;">{{ r.get_full_name|default:r.username }}</div>
+      {% empty %}
+        <p style="color:#6b7a8d;font-size:.88rem;">Nenhum responsável vinculado.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card">
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Tentativas</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value">{{ acertos }}</div>
+        <div class="stat-label">Acertos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ taxa }}%</div>
+        <div class="stat-label">Taxa de acerto</div>
+      </div>
+    </div>
+
+    <!-- Sessões vinculadas -->
+    <div class="card">
+      <div class="card-title">📋 Sessões</div>
+      {% for s in crianca.sessoes.all %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
+          <a href="{% url 'detalhe_sessao' s.pk %}">{{ s.titulo }}</a>
+          <div style="display:flex;gap:.5rem;">
+            {% for a in s.atividades.all %}
+              <a href="{% url 'executar_atividade' crianca.pk a.pk %}?sessao={{ s.pk }}"
+                 class="btn btn-success btn-sm">▶ {{ a.titulo }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      {% empty %}
+        <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma sessão vinculada.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Histórico recente -->
+    {% if desempenhos %}
+    <div class="card">
+      <div class="card-title">📊 Histórico Recente</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Atividade</th><th>Sessão</th><th>Resultado</th><th>Data</th></tr></thead>
+          <tbody>
+            {% for d in desempenhos %}
+            <tr>
+              <td>{{ d.atividade.titulo }}</td>
+              <td>{{ d.sessao.titulo|default:'—' }}</td>
+              <td>{% if d.correto %}<span class="badge badge-success">Acerto</span>{% else %}<span class="badge badge-danger">Erro</span>{% endif %}</td>
+              <td style="font-size:.82rem;color:#6b7a8d;">{{ d.created_at|date:"d/m H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <a href="{% url 'relatorio_crianca' crianca.pk %}" class="btn btn-outline btn-sm" style="margin-top:.75rem;">Ver relatório completo →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

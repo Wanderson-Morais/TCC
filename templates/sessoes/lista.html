@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Sessões{% endblock %}
+{% block page_title %}Sessões Terapêuticas{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Sessões</h1>
+  {% if user.role == 'psicologo' %}
+    <a href="{% url 'criar_sessao' %}" class="btn btn-primary">+ Nova Sessão</a>
+  {% endif %}
+</div>
+
+{% if sessoes %}
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Título</th><th>Data</th><th>Atividades</th><th>Crianças</th><th>Ações</th></tr>
+        </thead>
+        <tbody>
+          {% for s in sessoes %}
+          <tr>
+            <td><a href="{% url 'detalhe_sessao' s.pk %}">{{ s.titulo }}</a></td>
+            <td>{{ s.data_sessao|date:"d/m/Y"|default:'—' }}</td>
+            <td>{{ s.atividades.count }}</td>
+            <td>{{ s.criancas.count }}</td>
+            <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+              <a href="{% url 'detalhe_sessao' s.pk %}" class="btn btn-outline btn-sm">Ver</a>
+              {% if user.role == 'psicologo' %}
+                <a href="{% url 'editar_sessao' s.pk %}" class="btn btn-outline btn-sm">Editar</a>
+                <a href="{% url 'excluir_sessao' s.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">📋</div>
+    <p>Nenhuma sessão criada.</p>
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'criar_sessao' %}" class="btn btn-primary">+ Criar Sessão</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

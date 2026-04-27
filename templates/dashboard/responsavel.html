@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Meu Painel{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-title">👧 Minhas Crianças</div>
+  {% if criancas %}
+    <div class="crianca-grid">
+      {% for c in criancas %}
+      <a href="{% url 'detalhe_crianca' c.pk %}" class="crianca-card">
+        {% if c.foto %}
+          <img class="crianca-card-img" src="{{ c.foto.url }}" alt="{{ c.nome }}">
+        {% else %}
+          <div class="crianca-card-img-placeholder">👧</div>
+        {% endif %}
+        <div class="crianca-card-body">
+          <div class="crianca-card-nome">{{ c.nome }}</div>
+          <div class="crianca-card-info">{{ c.idade }} anos</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="icon">👧</div>
+      <p>Você ainda não está vinculado a nenhuma criança.<br>
+         Solicite ao psicólogo responsável que faça o vínculo.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% if ultimos_desempenhos %}
+<div class="card">
+  <div class="card-title">📊 Últimas Atividades</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Criança</th><th>Atividade</th><th>Resultado</th><th>Data</th></tr></thead>
+      <tbody>
+        {% for d in ultimos_desempenhos %}
+        <tr>
+          <td>{{ d.crianca.nome }}</td>
+          <td>{{ d.atividade.titulo }}</td>
+          <td>
+            {% if d.correto %}
+              <span class="badge badge-success">Acerto ✔</span>
+            {% else %}
+              <span class="badge badge-danger">Erro ✖</span>
+            {% endif %}
+          </td>
+          <td style="color:#6b7a8d;font-size:.85rem;">{{ d.created_at|date:"d/m/Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

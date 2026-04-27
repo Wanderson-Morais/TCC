@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cadastro Psicólogo | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-card" style="max-width:480px;">
+    <div class="auth-logo">
+      <div class="logo-icon">🧠</div>
+      <h1>Cadastro de Psicólogo</h1>
+      <p>Sua conta será ativada após aprovação do administrador.</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
+        Cadastrar
+      </button>
+    </form>
+    <p style="text-align:center;margin-top:1rem;font-size:.87rem;">
+      Já tem conta? <a href="{% url 'login' %}">Entrar</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>

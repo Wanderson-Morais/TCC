@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div style="max-width:760px;">
+  <div class="page-header">
+    <h1>{{ titulo }}</h1>
+    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="card">
+      <div class="card-title">📝 Dados da Atividade</div>
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🖼️ Imagens das Emoções</div>
+      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
+        Adicione imagens de rostos com emoções. A imagem cuja emoção coincidir com a <strong>Emoção Correta</strong> acima será a resposta correta.
+      </p>
+
+      {{ formset.management_form }}
+      {% for img_form in formset %}
+        <div class="formset-item">
+          <h4>Imagem {{ forloop.counter }}</h4>
+          {% if img_form.instance.pk and img_form.instance.imagem %}
+            <div style="margin-bottom:.5rem;">
+              <img src="{{ img_form.instance.imagem.url }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
+            </div>
+          {% endif %}
+          {% for field in img_form.visible_fields %}
+            <div class="form-group">
+              <label>{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+          {% endfor %}
+          {% for hidden in img_form.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if formset.can_delete %}
+            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
+              {{ img_form.DELETE.label }}: {{ img_form.DELETE }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;gap:.75rem;">
+      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
+      {% if atividade %}
+        <a href="{% url 'detalhe_atividade' atividade.pk %}" class="btn btn-outline">Cancelar</a>
+      {% else %}
+        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

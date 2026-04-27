@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Admin{% endblock %}
+{% block page_title %}Painel do Administrador{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ total_psicologos }}</div>
+    <div class="stat-label">Psicólogos</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-value">{{ psicologos_pendentes }}</div>
+    <div class="stat-label">Pendentes de aprovação</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-value">{{ total_responsaveis }}</div>
+    <div class="stat-label">Responsáveis</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_criancas }}</div>
+    <div class="stat-label">Crianças cadastradas</div>
+  </div>
+</div>
+
+{% if psicologos_lista %}
+<div class="card">
+  <div class="card-title">⏳ Psicólogos Aguardando Aprovação</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>CRP</th><th>E-mail</th><th>Ação</th></tr></thead>
+      <tbody>
+        {% for p in psicologos_lista %}
+        <tr>
+          <td>{{ p.get_full_name|default:p.username }}</td>
+          <td>{{ p.crp|default:'—' }}</td>
+          <td>{{ p.email|default:'—' }}</td>
+          <td>
+            <a href="{% url 'aprovar_psicologo' p.pk %}" class="btn btn-success btn-sm">✔ Aprovar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:.75rem;">
+    <a href="{% url 'admin_usuarios' %}" class="btn btn-outline btn-sm">Ver todos os usuários →</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

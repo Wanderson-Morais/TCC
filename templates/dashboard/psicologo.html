@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Meu Painel{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ total_criancas }}</div>
+    <div class="stat-label">Crianças</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-value">{{ total_atividades }}</div>
+    <div class="stat-label">Atividades</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-value">{{ total_sessoes }}</div>
+    <div class="stat-label">Sessões</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;flex-wrap:wrap;">
+
+  <div class="card">
+    <div class="card-title">👧 Minhas Crianças</div>
+    {% if criancas %}
+      <div class="crianca-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));">
+        {% for c in criancas %}
+        <a href="{% url 'detalhe_crianca' c.pk %}" class="crianca-card">
+          {% if c.foto %}
+            <img class="crianca-card-img" src="{{ c.foto.url }}" alt="{{ c.nome }}">
+          {% else %}
+            <div class="crianca-card-img-placeholder">👧</div>
+          {% endif %}
+          <div class="crianca-card-body">
+            <div class="crianca-card-nome">{{ c.nome }}</div>
+            <div class="crianca-card-info">{{ c.idade }} anos</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <a href="{% url 'lista_criancas' %}" class="btn btn-outline btn-sm" style="margin-top:.75rem;">Ver todas →</a>
+    {% else %}
+      <div class="empty-state" style="padding:1.5rem 0;">
+        <p>Nenhuma criança cadastrada ainda.</p>
+        <a href="{% url 'criar_crianca' %}" class="btn btn-primary btn-sm">+ Nova Criança</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 Últimos Registros</div>
+    {% if ultimos_desempenhos %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Criança</th><th>Atividade</th><th>Resultado</th></tr></thead>
+          <tbody>
+            {% for d in ultimos_desempenhos %}
+            <tr>
+              <td><a href="{% url 'detalhe_crianca' d.crianca.pk %}">{{ d.crianca.nome }}</a></td>
+              <td>{{ d.atividade.titulo }}</td>
+              <td>
+                {% if d.correto %}
+                  <span class="badge badge-success">Acerto</span>
+                {% else %}
+                  <span class="badge badge-danger">Erro</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <a href="{% url 'relatorio_geral' %}" class="btn btn-outline btn-sm" style="margin-top:.75rem;">Ver relatórios →</a>
+    {% else %}
+      <div class="empty-state" style="padding:1.5rem 0;">
+        <p>Nenhuma atividade executada ainda.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div style="display:flex;gap:.75rem;margin-top:.5rem;flex-wrap:wrap;">
+  <a href="{% url 'criar_crianca' %}" class="btn btn-primary">+ Nova Criança</a>
+  <a href="{% url 'criar_atividade' %}" class="btn btn-success">+ Nova Atividade</a>
+  <a href="{% url 'criar_sessao' %}" class="btn btn-outline">+ Nova Sessão</a>
+</div>
+
+{% endblock %}

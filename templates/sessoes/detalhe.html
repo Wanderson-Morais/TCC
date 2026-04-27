@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ sessao.titulo }}{% endblock %}
+{% block page_title %}{{ sessao.titulo }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>{{ sessao.titulo }}</h1>
+  <div style="display:flex;gap:.5rem;">
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'editar_sessao' sessao.pk %}" class="btn btn-outline btn-sm">Editar</a>
+      <a href="{% url 'excluir_sessao' sessao.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+    {% endif %}
+    <a href="{% url 'lista_sessoes' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+</div>
+
+{% if sessao.descricao %}
+  <p style="margin-bottom:1rem;color:#555;">{{ sessao.descricao }}</p>
+{% endif %}
+{% if sessao.data_sessao %}
+  <p style="font-size:.88rem;color:#6b7a8d;margin-bottom:1.25rem;">📅 {{ sessao.data_sessao|date:"d/m/Y" }}</p>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+  <div class="card">
+    <div class="card-title">🎯 Atividades ({{ sessao.atividades.count }})</div>
+    {% for a in sessao.atividades.all %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
+        <div>
+          <div style="font-weight:500;font-size:.92rem;">{{ a.titulo }}</div>
+          <div style="font-size:.8rem;color:#6b7a8d;font-style:italic;">"{{ a.pergunta }}"</div>
+        </div>
+        <a href="{% url 'detalhe_atividade' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+      </div>
+    {% empty %}
+      <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma atividade vinculada.</p>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">👧 Crianças ({{ sessao.criancas.count }})</div>
+    {% for c in sessao.criancas.all %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          {% if c.foto %}
+            <img src="{{ c.foto.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+          {% else %}
+            <span style="font-size:1.5rem;">👧</span>
+          {% endif %}
+          <div>
+            <div style="font-weight:500;font-size:.92rem;">{{ c.nome }}</div>
+            <div style="font-size:.78rem;color:#6b7a8d;">{{ c.idade }} anos</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.4rem;">
+          <a href="{% url 'detalhe_crianca' c.pk %}" class="btn btn-outline btn-sm">Ver</a>
+        </div>
+      </div>
+    {% empty %}
+      <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma criança vinculada.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Executar atividades -->
+{% if sessao.criancas.all and sessao.atividades.all %}
+<div class="card">
+  <div class="card-title">▶ Iniciar Atividade</div>
+  <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+    {% for c in sessao.criancas.all %}
+      {% for a in sessao.atividades.all %}
+        <a href="{% url 'executar_atividade' c.pk a.pk %}?sessao={{ sessao.pk }}"
+           class="btn btn-success">
+          ▶ {{ c.nome }} · {{ a.titulo }}
+        </a>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

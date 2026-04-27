@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Excluir Usuário{% endblock %}
+{% block page_title %}Excluir Usuário{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card">
+    <p>Tem certeza que deseja excluir o usuário <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>?</p>
+    <p style="color:#e05252;font-size:.88rem;margin-top:.5rem;">Esta ação não pode ser desfeita.</p>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+      <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Excluir</button>
+      </form>
+      <a href="{% url 'admin_usuarios' %}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ atividade.titulo }} | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body { background: linear-gradient(135deg,#e8f4fd,#f0f9f0); }
+    .exec-wrapper { min-height: 100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1rem; }
+    .exec-card { background:#fff; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,.12); padding:2.5rem; max-width:900px; width:100%; }
+    .exec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .exec-crianca { font-size:.92rem; color:#6b7a8d; }
+  </style>
+</head>
+<body>
+
+<div class="exec-wrapper">
+  <div class="exec-card">
+    <div class="exec-header">
+      <div class="exec-crianca">👧 {{ crianca.nome }}</div>
+      <a href="{% url 'detalhe_crianca' crianca.pk %}" style="font-size:.85rem;color:#6b7a8d;">✖ Sair</a>
+    </div>
+
+    <div class="exec-screen">
+      {% if total_atividades %}
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:.85rem;color:#6b7a8d;margin-bottom:.3rem;">
+          Atividade {{ indice_atual }} de {{ total_atividades }}
+        </div>
+        <div class="progress">
+          <div class="progress-bar"
+               style="width:{% widthratio indice_atual total_atividades 100 %}%;"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="exec-pergunta">{{ atividade.pergunta }}</div>
+
+      <div class="exec-imagens">
+        {% for img in imagens %}
+        <button class="exec-img-btn"
+                data-imagem-id="{{ img.pk }}"
+                data-emocao="{{ img.emocao }}"
+                type="button">
+          <img src="{{ img.imagem.url }}" alt="{{ img.get_emocao_display }}">
+        </button>
+        {% endfor %}
+      </div>
+
+      <div id="next-btn-wrap" style="margin-top:1.5rem;">
+        {% if proxima_url %}
+          <a id="next-btn"
+             href="{{ proxima_url }}"
+             class="btn btn-success btn-lg"
+             style="display:none;">
+            Próxima atividade →
+          </a>
+        {% else %}
+          <a id="next-btn"
+             href="{% if sessao %}{% url 'detalhe_sessao' sessao.pk %}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}"
+             class="btn btn-primary btn-lg"
+             style="display:none;">
+            {% if total_atividades %}Finalizar sessão ✔{% else %}Continuar →{% endif %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box"></div>
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    initExecution(
+      {{ crianca.pk }},
+      {{ atividade.pk }},
+      {{ sessao.pk|default:'null' }},
+      '{{ csrf_token }}'
+    );
+  });
+</script>
+</body>
+</html>
