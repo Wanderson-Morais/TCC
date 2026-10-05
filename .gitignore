@@ -1,2 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Ambiente virtual
 venv/
+.venv/
+
+# Django
 db.sqlite3
+staticfiles/
+
+# Segredos locais
+.env

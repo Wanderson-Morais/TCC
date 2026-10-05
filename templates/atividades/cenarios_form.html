@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div style="max-width:760px;">
+  <div class="page-header">
+    <h1>{{ titulo }}</h1>
+    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="card">
+      <div class="card-title">📝 Dados da Atividade</div>
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏞️ Cenários</div>
+      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
+        Cada cenário é uma situação do cotidiano: a <strong>imagem</strong>, uma <strong>descrição</strong> curta e a
+        <strong>emoção correta</strong>. A criança arrasta o rótulo da emoção até a cena correspondente.
+        Use pelo menos 2 cenários com emoções diferentes.
+      </p>
+
+      {% if formset.non_form_errors %}
+        <div class="form-error" style="margin-bottom:.75rem;">{{ formset.non_form_errors.0 }}</div>
+      {% endif %}
+
+      {{ formset.management_form }}
+      {% for cenario_form in formset %}
+        <div class="formset-item">
+          <h4>Cenário {{ forloop.counter }}</h4>
+          {% if cenario_form.instance.pk and cenario_form.instance.imagem %}
+            <div style="margin-bottom:.5rem;">
+              <img src="{{ cenario_form.instance.imagem.url }}" alt="{{ cenario_form.instance.descricao }}"
+                   style="width:120px;height:80px;object-fit:cover;border-radius:8px;">
+            </div>
+          {% endif %}
+          {% for field in cenario_form.visible_fields %}
+            {% if field.name != 'DELETE' %}
+            <div class="form-group">
+              <label>{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+            {% endif %}
+          {% endfor %}
+          {% for hidden in cenario_form.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if formset.can_delete %}
+            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
+              {{ cenario_form.DELETE.label }}: {{ cenario_form.DELETE }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;gap:.75rem;">
+      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
+      {% if atividade %}
+        <a href="{% url 'detalhe_atividade_cenario' atividade.pk %}" class="btn btn-outline">Cancelar</a>
+      {% else %}
+        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -305,6 +305,95 @@ tbody tr:hover { background: #f9fafc; }
 }
 .feedback-emoji { font-size: 5rem; display: block; margin-bottom: .5rem; }
 
+/* ===== Cartões Correspondentes ===== */
+.section-title { font-size: 1.05rem; font-weight: 600; color: var(--dark); margin-bottom: .85rem; }
+.cartoes-palavras {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .85rem;
+  margin: 1rem 0 1.5rem;
+}
+.cartao-palavra {
+  font-family: inherit;
+  font-size: 1.35rem; font-weight: 700; color: var(--dark);
+  background: #fff;
+  border: 4px solid var(--border);
+  border-radius: 14px;
+  padding: .9rem 1.6rem;
+  min-width: 140px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.cartao-palavra:hover:not(:disabled) { transform: scale(1.04); border-color: var(--primary); }
+.cartao-palavra.selected { border-color: var(--primary); background: #e8f1fb; box-shadow: 0 0 0 4px rgba(59,130,196,.25); }
+.cartao-palavra.matched { border-color: var(--secondary); background: #e6f9ec; color: #2d7a3a; cursor: default; }
+.cartao-imagem:disabled { cursor: default; }
+.cartao-imagem.correct:hover { transform: none; border-color: var(--secondary); }
+.cartao-imagem.wrong, .cartao-palavra.wrong { animation: cartao-shake .4s; }
+@keyframes cartao-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cartao-imagem.wrong, .cartao-palavra.wrong { animation: none; }
+}
+.exec-dica { font-size: 1rem; color: var(--muted); min-height: 1.5rem; }
+
+/* ===== Emoções em Cenários ===== */
+.cenario-rotulos {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem;
+  padding: .75rem 0;
+}
+.cenario-rotulo {
+  font-family: inherit;
+  font-size: 1.35rem; font-weight: 700; color: var(--dark);
+  background: #fff;
+  border: 4px solid var(--border);
+  border-radius: 999px;
+  padding: .75rem 1.75rem;
+  cursor: grab;
+  box-shadow: var(--shadow);
+  touch-action: none;
+  user-select: none; -webkit-user-select: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.cenario-rotulo:hover { border-color: var(--primary); }
+.cenario-rotulo.selected { border-color: var(--primary); background: #e8f1fb; box-shadow: 0 0 0 4px rgba(59,130,196,.25); }
+.cenario-rotulo.dragging { cursor: grabbing; position: relative; z-index: 50; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.cenario-palco { max-width: 760px; margin: 1rem auto; }
+.cenario-contador { font-size: .85rem; color: var(--muted); margin-bottom: .3rem; }
+.cenario-card {
+  border: 4px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+}
+.cenario-card[hidden] { display: none; }
+.cenario-card img {
+  width: 100%; height: auto; max-height: 55vh;
+  object-fit: contain; display: block;
+  background: var(--light);
+}
+.cenario-card-desc { font-size: 1.25rem; font-weight: 600; color: var(--dark); padding: .85rem 1rem 0; }
+.cenario-alvo {
+  margin: .85rem 1rem 1rem;
+  border: 3px dashed var(--border);
+  border-radius: 999px;
+  padding: .7rem;
+  font-size: 1.05rem; color: var(--muted);
+}
+.cenario-card.over { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59,130,196,.25); }
+.cenario-card.correct { border-color: var(--secondary); background: #e6f9ec; cursor: default; }
+.cenario-card.correct .cenario-alvo { border-style: solid; border-color: var(--secondary); background: #fff; color: #2d7a3a; font-weight: 700; font-size: 1.35rem; }
+.cenario-card.wrong { border-color: var(--danger); animation: cartao-shake .4s; }
+@media (prefers-reduced-motion: reduce) {
+  .cenario-card.wrong { animation: none; }
+}
+
 /* ===== Progress bar ===== */
 .progress { background: var(--border); border-radius: 20px; height: 10px; overflow: hidden; margin-bottom: .3rem; }
 .progress-bar { height: 100%; border-radius: 20px; background: var(--primary); transition: width .4s; }

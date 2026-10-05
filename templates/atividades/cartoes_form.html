@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+{% block content %}
+<div style="max-width:760px;">
+  <div class="page-header">
+    <h1>{{ titulo }}</h1>
+    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="card">
+      <div class="card-title">📝 Dados da Atividade</div>
+      {% for field in form %}
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🃏 Cartões</div>
+      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
+        Cada cartão é um par: a <strong>palavra</strong> da emoção e a <strong>imagem facial</strong> correspondente.
+        A criança escolhe uma palavra e procura o rosto que combina. Use pelo menos 2 cartões, um por emoção.
+      </p>
+
+      {% if formset.non_form_errors %}
+        <div class="form-error" style="margin-bottom:.75rem;">{{ formset.non_form_errors.0 }}</div>
+      {% endif %}
+
+      {{ formset.management_form }}
+      {% for cartao_form in formset %}
+        <div class="formset-item">
+          <h4>Cartão {{ forloop.counter }}</h4>
+          {% if cartao_form.instance.pk and cartao_form.instance.imagem %}
+            <div style="margin-bottom:.5rem;">
+              <img src="{{ cartao_form.instance.imagem.url }}" alt="{{ cartao_form.instance.get_emocao_display }}"
+                   style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
+            </div>
+          {% endif %}
+          {% for field in cartao_form.visible_fields %}
+            {% if field.name != 'DELETE' %}
+            <div class="form-group">
+              <label>{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+            </div>
+            {% endif %}
+          {% endfor %}
+          {% for hidden in cartao_form.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if formset.can_delete %}
+            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
+              {{ cartao_form.DELETE.label }}: {{ cartao_form.DELETE }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;gap:.75rem;">
+      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
+      {% if atividade %}
+        <a href="{% url 'detalhe_atividade_cartoes' atividade.pk %}" class="btn btn-outline">Cancelar</a>
+      {% else %}
+        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

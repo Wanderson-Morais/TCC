@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from atividades.models import Atividade
+from atividades.models import Atividade, AtividadeCartoes, AtividadeCenario
 from criancas.models import Crianca
 
 
@@ -19,6 +19,18 @@ class Sessao(models.Model):
         through='SessaoAtividade',
         related_name='sessoes',
         blank=True,
+    )
+    atividades_cartoes = models.ManyToManyField(
+        AtividadeCartoes,
+        related_name='sessoes',
+        blank=True,
+        verbose_name='Atividades de Cartões',
+    )
+    atividades_cenarios = models.ManyToManyField(
+        AtividadeCenario,
+        related_name='sessoes',
+        blank=True,
+        verbose_name='Atividades de Cenários',
     )
     criancas = models.ManyToManyField(
         Crianca,

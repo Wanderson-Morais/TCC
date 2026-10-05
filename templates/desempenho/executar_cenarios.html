@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ atividade.titulo }} | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body { background: linear-gradient(135deg,#e8f4fd,#f0f9f0); }
+    .exec-wrapper { min-height: 100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1rem; }
+    .exec-card { background:#fff; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,.12); padding:2.5rem; max-width:1000px; width:100%; }
+    .exec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .exec-crianca { font-size:.92rem; color:#6b7a8d; }
+    .exec-screen { max-width: none; }
+  </style>
+</head>
+<body>
+
+<div class="exec-wrapper">
+  <div class="exec-card">
+    <div class="exec-header">
+      <div class="exec-crianca">👧 {{ crianca.nome }}</div>
+      <a href="{% url 'detalhe_crianca' crianca.pk %}" style="font-size:.85rem;color:#6b7a8d;">✖ Sair</a>
+    </div>
+
+    <div class="exec-screen">
+      <div class="cenario-contador">
+        Cena <span id="cenarios-indice">1</span> de {{ cenarios|length }}
+      </div>
+      <div class="progress">
+        <div class="progress-bar success" id="cenarios-progresso" style="width:0%;"></div>
+      </div>
+
+      <div class="exec-pergunta">Como a pessoa está se sentindo?</div>
+
+      <div class="cenario-palco">
+        {% for c in cenarios %}
+        <div class="cenario-card" data-cenario-id="{{ c.pk }}" tabindex="0" role="button"
+             aria-label="Cena: {{ c.descricao }}"{% if not forloop.first %} hidden{% endif %}>
+          <img src="{{ c.imagem.url }}" alt="" draggable="false">
+          <div class="cenario-card-desc">{{ c.descricao }}</div>
+          <div class="cenario-alvo">Solte a emoção aqui</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="exec-dica" id="cenarios-dica" aria-live="polite">Arraste a emoção até a cena.</div>
+
+      <div class="cenario-rotulos">
+        {% for valor, nome in rotulos %}
+        <button class="cenario-rotulo" data-emocao="{{ valor }}" type="button">{{ nome }}</button>
+        {% endfor %}
+      </div>
+
+      <div id="next-btn-wrap" style="margin-top:1.5rem;">
+        <button id="proxima-cena" type="button" class="btn btn-success btn-lg" style="display:none;">
+          Próxima cena →
+        </button>
+        <a id="next-btn"
+           href="{% if sessao %}{% url 'detalhe_sessao' sessao.pk %}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}"
+           class="btn btn-primary btn-lg"
+           style="display:none;">
+          Continuar →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box"></div>
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    initCenarios(
+      {{ crianca.pk }},
+      {{ atividade.pk }},
+      {{ sessao.pk|default:'null' }},
+      '{{ csrf_token }}'
+    );
+  });
+</script>
+</body>
+</html>

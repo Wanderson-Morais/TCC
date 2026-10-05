@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ atividade.titulo }} | EmoTEA</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body { background: linear-gradient(135deg,#e8f4fd,#f0f9f0); }
+    .exec-wrapper { min-height: 100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1rem; }
+    .exec-card { background:#fff; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,.12); padding:2.5rem; max-width:900px; width:100%; }
+    .exec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+    .exec-crianca { font-size:.92rem; color:#6b7a8d; }
+  </style>
+</head>
+<body>
+
+<div class="exec-wrapper">
+  <div class="exec-card">
+    <div class="exec-header">
+      <div class="exec-crianca">👧 {{ crianca.nome }}</div>
+      <a href="{% url 'detalhe_crianca' crianca.pk %}" style="font-size:.85rem;color:#6b7a8d;">✖ Sair</a>
+    </div>
+
+    <div class="exec-screen">
+      <div class="progress">
+        <div class="progress-bar success" id="cartoes-progresso" style="width:0%;"></div>
+      </div>
+
+      <div class="exec-pergunta">Escolha um cartão e encontre o rosto que combina</div>
+
+      <div class="cartoes-palavras">
+        {% for c in palavras %}
+        <button class="cartao-palavra" data-cartao-id="{{ c.pk }}" type="button">{{ c.palavra }}</button>
+        {% endfor %}
+      </div>
+
+      <div class="exec-dica" id="cartoes-dica" aria-live="polite">Toque em um cartão para começar.</div>
+
+      <div class="exec-imagens">
+        {% for c in imagens %}
+        <button class="exec-img-btn cartao-imagem" data-cartao-id="{{ c.pk }}" type="button">
+          <img src="{{ c.imagem.url }}" alt="Rosto {{ forloop.counter }}">
+        </button>
+        {% endfor %}
+      </div>
+
+      <div id="next-btn-wrap" style="margin-top:1.5rem;">
+        <a id="next-btn"
+           href="{% if sessao %}{% url 'detalhe_sessao' sessao.pk %}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}"
+           class="btn btn-primary btn-lg"
+           style="display:none;">
+          Continuar →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box"></div>
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    initCartoes(
+      {{ crianca.pk }},
+      {{ atividade.pk }},
+      {{ sessao.pk|default:'null' }},
+      '{{ csrf_token }}'
+    );
+  });
+</script>
+</body>
+</html>

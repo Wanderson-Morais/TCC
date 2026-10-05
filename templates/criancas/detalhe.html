@@ -74,10 +74,18 @@
       {% for s in crianca.sessoes.all %}
         <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
           <a href="{% url 'detalhe_sessao' s.pk %}">{{ s.titulo }}</a>
-          <div style="display:flex;gap:.5rem;">
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;">
             {% for a in s.atividades.all %}
               <a href="{% url 'executar_atividade' crianca.pk a.pk %}?sessao={{ s.pk }}"
                  class="btn btn-success btn-sm">▶ {{ a.titulo }}</a>
+            {% endfor %}
+            {% for a in s.atividades_cartoes.all %}
+              <a href="{% url 'executar_cartoes' crianca.pk a.pk %}?sessao={{ s.pk }}"
+                 class="btn btn-success btn-sm">🃏 {{ a.titulo }}</a>
+            {% endfor %}
+            {% for a in s.atividades_cenarios.all %}
+              <a href="{% url 'executar_cenario' crianca.pk a.pk %}?sessao={{ s.pk }}"
+                 class="btn btn-success btn-sm">🏞️ {{ a.titulo }}</a>
             {% endfor %}
           </div>
         </div>
@@ -85,6 +93,10 @@
         <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma sessão vinculada.</p>
       {% endfor %}
     </div>
+
+    {% if total and not desempenhos %}
+      <a href="{% url 'relatorio_crianca' crianca.pk %}" class="btn btn-outline btn-sm">Ver relatório completo →</a>
+    {% endif %}
 
     <!-- Histórico recente -->
     {% if desempenhos %}

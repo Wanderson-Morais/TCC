@@ -6,9 +6,15 @@
 <div class="page-header">
   <h1>Atividades</h1>
   {% if user.role == 'psicologo' %}
-    <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Nova Atividade</a>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Nova Atividade</a>
+      <a href="{% url 'criar_atividade_cartoes' %}" class="btn btn-primary">+ Nova Atividade de Cartões</a>
+      <a href="{% url 'criar_atividade_cenario' %}" class="btn btn-primary">+ Nova Atividade de Cenários</a>
+    </div>
   {% endif %}
 </div>
+
+<h2 class="section-title">🎯 Identificação de Emoções</h2>
 
 {% if atividades %}
   <div class="atividade-grid">
@@ -35,6 +41,66 @@
     <p>Nenhuma atividade cadastrada.</p>
     {% if user.role == 'psicologo' %}
       <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Criar Atividade</a>
+    {% endif %}
+  </div>
+{% endif %}
+
+<h2 class="section-title" style="margin-top:2rem;">🃏 Cartões Correspondentes</h2>
+
+{% if atividades_cartoes %}
+  <div class="atividade-grid">
+    {% for a in atividades_cartoes %}
+    <div class="atividade-card">
+      <div class="atividade-card-title">{{ a.titulo }}</div>
+      <div class="atividade-card-pergunta">
+        {% for c in a.cartoes.all %}{{ c.palavra }}{% if not forloop.last %} · {% endif %}{% endfor %}
+      </div>
+      <div style="font-size:.82rem;color:#6b7a8d;">{{ a.cartoes.count }} cartão(ões)</div>
+      <div class="atividade-card-actions">
+        <a href="{% url 'detalhe_atividade_cartoes' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+        {% if user.role == 'psicologo' %}
+          <a href="{% url 'editar_atividade_cartoes' a.pk %}" class="btn btn-outline btn-sm">Editar</a>
+          <a href="{% url 'excluir_atividade_cartoes' a.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">🃏</div>
+    <p>Nenhuma atividade de cartões cadastrada.</p>
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'criar_atividade_cartoes' %}" class="btn btn-primary">+ Criar Atividade de Cartões</a>
+    {% endif %}
+  </div>
+{% endif %}
+
+<h2 class="section-title" style="margin-top:2rem;">🏞️ Organização de Emoções em Cenários</h2>
+
+{% if atividades_cenarios %}
+  <div class="atividade-grid">
+    {% for a in atividades_cenarios %}
+    <div class="atividade-card">
+      <div class="atividade-card-title">{{ a.titulo }}</div>
+      {% if a.descricao %}<div class="atividade-card-pergunta">{{ a.descricao|truncatechars:80 }}</div>{% endif %}
+      <div style="font-size:.82rem;color:#6b7a8d;">{{ a.cenarios.count }} cenário(s)</div>
+      <div class="atividade-card-actions">
+        <a href="{% url 'detalhe_atividade_cenario' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+        {% if user.role == 'psicologo' %}
+          <a href="{% url 'editar_atividade_cenario' a.pk %}" class="btn btn-outline btn-sm">Editar</a>
+          <a href="{% url 'excluir_atividade_cenario' a.pk %}" class="btn btn-danger btn-sm">Excluir</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">🏞️</div>
+    <p>Nenhuma atividade de cenários cadastrada.</p>
+    {% if user.role == 'psicologo' %}
+      <a href="{% url 'criar_atividade_cenario' %}" class="btn btn-primary">+ Criar Atividade de Cenários</a>
     {% endif %}
   </div>
 {% endif %}

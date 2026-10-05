@@ -24,7 +24,7 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
 
   <div class="card">
-    <div class="card-title">🎯 Atividades ({{ sessao.atividades.count }})</div>
+    <div class="card-title">🎯 Atividades ({{ sessao.atividades.count|add:sessao.atividades_cartoes.count|add:sessao.atividades_cenarios.count }})</div>
     {% for a in sessao.atividades.all %}
       <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
         <div>
@@ -34,7 +34,27 @@
         <a href="{% url 'detalhe_atividade' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
       </div>
     {% empty %}
-      <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma atividade vinculada.</p>
+      {% if not sessao.atividades_cartoes.all and not sessao.atividades_cenarios.all %}
+        <p style="color:#6b7a8d;font-size:.88rem;">Nenhuma atividade vinculada.</p>
+      {% endif %}
+    {% endfor %}
+    {% for a in sessao.atividades_cartoes.all %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
+        <div>
+          <div style="font-weight:500;font-size:.92rem;">🃏 {{ a.titulo }}</div>
+          <div style="font-size:.8rem;color:#6b7a8d;">Cartões Correspondentes · {{ a.cartoes.count }} cartão(ões)</div>
+        </div>
+        <a href="{% url 'detalhe_atividade_cartoes' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+      </div>
+    {% endfor %}
+    {% for a in sessao.atividades_cenarios.all %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #eee;">
+        <div>
+          <div style="font-weight:500;font-size:.92rem;">🏞️ {{ a.titulo }}</div>
+          <div style="font-size:.8rem;color:#6b7a8d;">Emoções em Cenários · {{ a.cenarios.count }} cenário(s)</div>
+        </div>
+        <a href="{% url 'detalhe_atividade_cenario' a.pk %}" class="btn btn-outline btn-sm">Ver</a>
+      </div>
     {% endfor %}
   </div>
 
@@ -64,7 +84,7 @@
 </div>
 
 <!-- Executar atividades -->
-{% if sessao.criancas.all and sessao.atividades.all %}
+{% if sessao.atividades.all or sessao.atividades_cartoes.all or sessao.atividades_cenarios.all %}{% if sessao.criancas.all %}
 <div class="card">
   <div class="card-title">▶ Iniciar Atividade</div>
   <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
@@ -75,9 +95,21 @@
           ▶ {{ c.nome }} · {{ a.titulo }}
         </a>
       {% endfor %}
+      {% for a in sessao.atividades_cartoes.all %}
+        <a href="{% url 'executar_cartoes' c.pk a.pk %}?sessao={{ sessao.pk }}"
+           class="btn btn-success">
+          🃏 {{ c.nome }} · {{ a.titulo }}
+        </a>
+      {% endfor %}
+      {% for a in sessao.atividades_cenarios.all %}
+        <a href="{% url 'executar_cenario' c.pk a.pk %}?sessao={{ sessao.pk }}"
+           class="btn btn-success">
+          🏞️ {{ c.nome }} · {{ a.titulo }}
+        </a>
+      {% endfor %}
     {% endfor %}
   </div>
 </div>
-{% endif %}
+{% endif %}{% endif %}
 
 {% endblock %}

@@ -13,7 +13,7 @@
       {% for field in form %}
         <div class="form-group">
           <label>{{ field.label }}</label>
-          {% if field.name == 'atividades' or field.name == 'criancas' %}
+          {% if field.name == 'atividades' or field.name == 'atividades_cartoes' or field.name == 'atividades_cenarios' or field.name == 'criancas' %}
             <div class="checkbox-group">{{ field }}</div>
           {% else %}
             {{ field }}

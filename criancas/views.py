@@ -4,7 +4,7 @@ from django.contrib import messages
 from .models import Crianca
 from .forms import CriancaForm
 from accounts.decorators import psicologo_required, adulto_required
-from desempenho.models import Desempenho
+from desempenho.models import Desempenho, DesempenhoCartoes, DesempenhoCenario
 
 
 @login_required
@@ -47,8 +47,16 @@ def detalhe_crianca(request, pk):
 
     qs = Desempenho.objects.filter(crianca=crianca).select_related('atividade', 'sessao').order_by('-created_at')
 
-    total = qs.count()
-    acertos = qs.filter(correto=True).count()
+    qs_cartoes = DesempenhoCartoes.objects.filter(crianca=crianca)
+
+    qs_cenarios = DesempenhoCenario.objects.filter(crianca=crianca)
+
+    total = qs.count() + qs_cartoes.count() + qs_cenarios.count()
+    acertos = (
+        qs.filter(correto=True).count()
+        + qs_cartoes.filter(correto=True).count()
+        + qs_cenarios.filter(correto=True).count()
+    )
     taxa = round((acertos / total * 100) if total else 0, 1)
 
     desempenhos = qs[:20]
