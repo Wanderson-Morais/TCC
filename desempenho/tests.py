@@ -1,18 +1,22 @@
 import json
 import shutil
 import tempfile
+from datetime import timedelta
 from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 
 from accounts.models import CustomUser
-from atividades.models import AtividadeCartoes, AtividadeCenario, CartaoEmocao, CenarioEmocao
+from atividades.models import (
+    Atividade, AtividadeCartoes, AtividadeCenario, CartaoEmocao, CenarioEmocao, ImagemEmocao,
+)
 from criancas.models import Crianca
-from sessoes.models import Sessao
-from .models import DesempenhoCartoes, DesempenhoCenario
+from sessoes.models import Sessao, SessaoAtividade
+from .models import Desempenho, DesempenhoCartoes, DesempenhoCenario
 
 MEDIA_TMP = tempfile.mkdtemp()
 
@@ -240,15 +244,26 @@ class EmocoesEmCenariosTests(TestCase):
             descricao='Passeio no parque', emocao_correta='feliz',
         )
         self.client.force_login(self.psicologo)
-        r = self.client.get(reverse('executar_cenario', args=[self.crianca.pk, self.atividade.pk]))
+        url = reverse('executar_cenario', args=[self.crianca.pk, self.atividade.pk])
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.context['cenarios']), 3)
+        self.assertEqual(r.context['cenario'], self.bolo)
+        self.assertEqual((r.context['cena_numero'], r.context['total_cenas']), (1, 3))
         self.assertEqual(sorted(v for v, _ in r.context['rotulos']), ['feliz', 'triste'])
+        self.assertEqual(r.context['proxima_url'], f'{url}?cena={self.brinquedo.pk}')
+        self.assertContains(r, 'Próxima cena →')
+        self.assertNotContains(r, 'O brinquedo quebrou')
+
+        ultima = self.atividade.cenarios.last()
+        r = self.client.get(f'{url}?cena={ultima.pk}')
+        self.assertEqual(r.context['cenario'], ultima)
+        self.assertIsNone(r.context['proxima_url'])
+        self.assertContains(r, 'Continuar →')
 
     def test_associacao_correta_e_incorreta(self):
         self.client.force_login(self.psicologo)
-        self.assertEqual(self._responder(self.bolo, 'triste').json(), {'correto': False})
-        self.assertEqual(self._responder(self.bolo, 'feliz').json(), {'correto': True})
+        self.assertEqual(self._responder(self.bolo, 'triste').json(), {'correto': False, 'emocao_correta': 'feliz'})
+        self.assertEqual(self._responder(self.bolo, 'feliz').json(), {'correto': True, 'emocao_correta': 'feliz'})
         erro, acerto = DesempenhoCenario.objects.order_by('id')
         self.assertTrue(acerto.correto)
         self.assertFalse(erro.correto)
@@ -314,4 +329,194 @@ class EmocoesEmCenariosTests(TestCase):
         r = self.client.get(reverse('relatorio_crianca', args=[self.crianca.pk]))
         self.assertEqual((r.context['total'], r.context['acertos'], r.context['taxa']), (2, 1, 50.0))
         self.assertContains(r, 'Emoções em Cenários')
-        self.assertContains(r, 'Ganhou um bolo')
+        self.assertContains(r, 'Cotidiano')
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TMP)
+class ReproducaoSessaoTests(TestCase):
+    def setUp(self):
+        self.psicologo = CustomUser.objects.create_user(
+            'psi', password='x', role='psicologo', aprovado=True
+        )
+        self.responsavel = CustomUser.objects.create_user('resp', password='x', role='responsavel')
+        self.ana = Crianca.objects.create(nome='Ana', data_nascimento='2018-01-01', psicologo=self.psicologo)
+        self.ana.responsaveis.add(self.responsavel)
+        self.bia = Crianca.objects.create(nome='Bia', data_nascimento='2018-01-01', psicologo=self.psicologo)
+
+        self.imagens = Atividade.objects.create(
+            titulo='Quem está feliz', pergunta='Quem está feliz?', emocao_correta='feliz',
+            psicologo=self.psicologo,
+        )
+        ImagemEmocao.objects.create(atividade=self.imagens, imagem=_imagem(), emocao='feliz')
+        self.cartoes = AtividadeCartoes.objects.create(titulo='Pares', psicologo=self.psicologo)
+        for emocao in ('feliz', 'triste'):
+            CartaoEmocao.objects.create(atividade=self.cartoes, palavra=emocao, imagem=_imagem(), emocao=emocao)
+        self.cenarios = AtividadeCenario.objects.create(titulo='Cenas', psicologo=self.psicologo)
+        for emocao in ('feliz', 'triste'):
+            CenarioEmocao.objects.create(
+                atividade=self.cenarios, imagem=_imagem(), descricao=emocao, emocao_correta=emocao
+            )
+
+        self.sessao = Sessao.objects.create(titulo='Sessão 1', psicologo=self.psicologo)
+        SessaoAtividade.objects.create(sessao=self.sessao, atividade=self.imagens, ordem=0)
+        self.sessao.atividades_cartoes.add(self.cartoes)
+        self.sessao.atividades_cenarios.add(self.cenarios)
+        self.sessao.criancas.add(self.ana, self.bia)
+        self.sufixo = f'?sessao={self.sessao.pk}'
+
+    def test_iniciar_abre_primeira_atividade(self):
+        self.client.force_login(self.psicologo)
+        r = self.client.get(reverse('iniciar_sessao', args=[self.sessao.pk]) + f'?crianca={self.bia.pk}')
+        self.assertRedirects(
+            r, reverse('executar_atividade', args=[self.bia.pk, self.imagens.pk]) + self.sufixo
+        )
+
+    def test_iniciar_sem_crianca_com_varias_volta_ao_detalhe(self):
+        self.client.force_login(self.psicologo)
+        r = self.client.get(reverse('iniciar_sessao', args=[self.sessao.pk]))
+        self.assertRedirects(r, reverse('detalhe_sessao', args=[self.sessao.pk]))
+
+    def test_sequencia_passa_por_todos_os_tipos(self):
+        self.client.force_login(self.psicologo)
+        r = self.client.get(reverse('executar_atividade', args=[self.ana.pk, self.imagens.pk]) + self.sufixo)
+        self.assertEqual(r.context['indice_atual'], 1)
+        # Cada cena de cenários conta como uma atividade: 1 + 1 + 2 cenas
+        self.assertEqual(r.context['total_atividades'], 4)
+        self.assertEqual(
+            r.context['proxima_url'],
+            reverse('executar_cartoes', args=[self.ana.pk, self.cartoes.pk]) + self.sufixo,
+        )
+
+        r = self.client.get(reverse('executar_cartoes', args=[self.ana.pk, self.cartoes.pk]) + self.sufixo)
+        self.assertContains(r, 'class="sidebar"')
+        self.assertContains(r, 'Faltam 2')
+        self.assertContains(r, 'Próxima atividade →')
+        url_cenario = reverse('executar_cenario', args=[self.ana.pk, self.cenarios.pk]) + self.sufixo
+        primeira, segunda = self.cenarios.cenarios.all()
+        self.assertEqual(r.context['proxima_url'], f'{url_cenario}&cena={primeira.pk}')
+
+        r = self.client.get(f'{url_cenario}&cena={primeira.pk}')
+        self.assertEqual(r.context['indice_atual'], 3)
+        self.assertEqual(r.context['cenario'], primeira)
+        self.assertEqual(r.context['proxima_url'], f'{url_cenario}&cena={segunda.pk}')
+
+        r = self.client.get(f'{url_cenario}&cena={segunda.pk}')
+        self.assertEqual(r.context['indice_atual'], 4)
+        self.assertEqual(r.context['cenario'], segunda)
+        self.assertIsNone(r.context['proxima_url'])
+        # Última atividade: mesma tela com barra lateral, "Terminar" e a tela de parabéns
+        self.assertContains(r, 'class="sidebar"')
+        self.assertContains(r, 'Última atividade!')
+        self.assertContains(r, 'Terminar ✔')
+        self.assertContains(r, 'Parabéns, Ana!')
+
+    def test_tela_de_execucao_com_barra_lateral_e_progresso(self):
+        self.client.force_login(self.psicologo)
+        url = reverse('executar_atividade', args=[self.ana.pk, self.imagens.pk])
+        r = self.client.get(url + self.sufixo)
+        self.assertContains(r, 'class="sidebar"')
+        self.assertContains(r, 'js/main.js?v=')  # força o navegador a baixar o JS novo
+        self.assertContains(r, 'Faltam 3')
+        self.assertContains(r, '✖ Sair')
+        self.assertContains(r, reverse('detalhe_sessao', args=[self.sessao.pk]))
+        self.assertContains(r, 'Próxima atividade →')
+        self.assertEqual(
+            [(s['estado'], s['tipo']) for s in r.context['segmentos']],
+            [('atual', 'imagens'), ('', 'cartoes'), ('', 'cenarios'), ('', 'cenarios')],
+        )
+        self.assertContains(r, 'exec-area tipo-imagens')
+        self.assertContains(r, '🖼️ Imagens')
+
+        # Fora de uma sessão: sem barra de progresso e sem tela de parabéns
+        r = self.client.get(url)
+        self.assertNotContains(r, 'exec-segmentos')
+        self.assertNotContains(r, 'Parabéns')
+        self.assertContains(r, 'Continuar →')
+
+    def test_responsavel_so_inicia_com_a_propria_crianca(self):
+        self.client.force_login(self.responsavel)
+        url = reverse('iniciar_sessao', args=[self.sessao.pk])
+        r = self.client.get(url + f'?crianca={self.bia.pk}')
+        self.assertRedirects(r, reverse('detalhe_sessao', args=[self.sessao.pk]))
+        r = self.client.get(url)  # só uma criança visível: inicia direto
+        self.assertRedirects(
+            r, reverse('executar_atividade', args=[self.ana.pk, self.imagens.pk]) + self.sufixo
+        )
+
+    def test_lista_e_detalhe_mostram_botao_iniciar(self):
+        self.client.force_login(self.psicologo)
+        url = reverse('iniciar_sessao', args=[self.sessao.pk])
+        r = self.client.get(reverse('lista_sessoes'))
+        self.assertContains(r, url)
+        # Conta os três tipos: 1 de imagens, 1 de cartões e 1 de cenários
+        self.assertEqual(r.context['sessoes'][0].total_atividades, 3)
+        self.assertNotContains(r, 'name="crianca"')
+        self.assertContains(
+            self.client.get(reverse('detalhe_sessao', args=[self.sessao.pk])), f'{url}?crianca={self.ana.pk}'
+        )
+
+
+@override_settings(MEDIA_ROOT=MEDIA_TMP)
+class RelatoriosTests(TestCase):
+    def setUp(self):
+        self.psicologo = CustomUser.objects.create_user(
+            'psi', password='x', role='psicologo', aprovado=True
+        )
+        self.responsavel = CustomUser.objects.create_user('resp', password='x', role='responsavel')
+        self.ana = Crianca.objects.create(nome='Ana Souza', data_nascimento='2018-01-01', psicologo=self.psicologo)
+        self.ana.responsaveis.add(self.responsavel)
+        self.bia = Crianca.objects.create(nome='Bia', data_nascimento='2018-01-01', psicologo=self.psicologo)
+
+        self.atividade = Atividade.objects.create(
+            titulo='Quem está feliz', pergunta='Quem está feliz?', emocao_correta='feliz',
+            psicologo=self.psicologo,
+        )
+        feliz = ImagemEmocao.objects.create(atividade=self.atividade, imagem=_imagem(), emocao='feliz')
+        triste = ImagemEmocao.objects.create(atividade=self.atividade, imagem=_imagem(), emocao='triste')
+
+        # 30 dias: 1 acerto e 2 erros (escolheu Triste no lugar de Feliz)
+        for imagem in (feliz, triste, triste):
+            Desempenho.objects.create(
+                crianca=self.ana, atividade=self.atividade, imagem_selecionada=imagem,
+                correto=imagem == feliz, tempo_resposta=2.0,
+            )
+        # Período anterior (há 40 dias): 1 acerto
+        antigo = Desempenho.objects.create(
+            crianca=self.ana, atividade=self.atividade, imagem_selecionada=feliz, correto=True,
+        )
+        Desempenho.objects.filter(pk=antigo.pk).update(created_at=timezone.now() - timedelta(days=40))
+
+    def test_relatorio_crianca_resume_periodo(self):
+        self.client.force_login(self.psicologo)
+        r = self.client.get(reverse('relatorio_crianca', args=[self.ana.pk]))
+        self.assertEqual((r.context['total'], r.context['acertos']), (3, 1))
+        self.assertNotContains(r, 'Em resumo')
+        self.assertNotContains(r, 'Por emoção')
+        self.assertNotContains(r, 'Histórico')
+        self.assertContains(r, reverse('executar_atividade', args=[self.ana.pk, self.atividade.pk]))
+
+        r = self.client.get(reverse('relatorio_crianca', args=[self.ana.pk]) + '?periodo=tudo&aba=atividade')
+        self.assertEqual(r.context['total'], 4)
+        self.assertEqual(r.context['aba'], 'atividade')
+
+    def test_relatorio_geral_busca_e_ordem(self):
+        self.client.force_login(self.psicologo)
+        r = self.client.get(reverse('relatorio_geral'))
+        # Menor taxa de acerto primeiro; quem não respondeu fica no fim
+        self.assertEqual([d['crianca'] for d in r.context['dados']], [self.ana, self.bia])
+        self.assertEqual(r.context['dados'][0]['taxa_pct'], 33)
+        self.assertNotContains(r, 'Situação')
+        self.assertNotContains(r, 'Tendência')
+
+        r = self.client.get(reverse('relatorio_geral') + '?q=bi')
+        self.assertEqual([d['crianca'] for d in r.context['dados']], [self.bia])
+        r = self.client.get(reverse('relatorio_geral') + '?ordem=nome')
+        self.assertEqual([d['crianca'] for d in r.context['dados']], [self.ana, self.bia])
+
+    def test_responsavel_ve_relatorio_sem_acoes_do_psicologo(self):
+        self.client.force_login(self.responsavel)
+        r = self.client.get(reverse('relatorio_crianca', args=[self.ana.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, reverse('executar_atividade', args=[self.ana.pk, self.atividade.pk]))
+        self.assertNotContains(r, reverse('relatorio_geral'))
+        self.assertEqual(self.client.get(reverse('relatorio_crianca', args=[self.bia.pk])).status_code, 404)

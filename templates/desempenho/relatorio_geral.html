@@ -4,51 +4,131 @@
 {% block content %}
 
 <div class="page-header">
-  <h1>Relatórios</h1>
+  <div>
+    <h1>Relatórios</h1>
+    <p class="page-sub">Veja como cada criança está indo nas atividades de emoções.</p>
+  </div>
+  <nav class="seg" aria-label="Período">
+    {% for valor, label, url in periodos %}
+      <a href="{{ url }}" class="seg-btn{% if valor == periodo %} on{% endif %}"{% if valor == periodo %} aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
 </div>
 
-{% if dados %}
+<div class="alert alert-info guia" id="guia-relatorios">
+  <div>
+    <strong>💡 Como usar os relatórios</strong>
+    <ol class="passos">
+      <li><span class="passo-num">1</span>Escolha uma criança na tabela</li>
+      <li><span class="passo-num">2</span>Clique em "Ver relatório"</li>
+      <li><span class="passo-num">3</span>Use as abas para ver os detalhes</li>
+    </ol>
+  </div>
+  <button type="button" class="btn btn-outline btn-sm" data-fechar-guia>Entendi</button>
+</div>
+
+{% if tem_criancas %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ resumo.criancas }}</div>
+    <div class="stat-label">Crianças acompanhadas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ resumo.respostas }}</div>
+    <div class="stat-label">Respostas no período</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-value">{{ resumo.media }}%</div>
+    <div class="stat-label">Média de acertos</div>
+  </div>
+</div>
+
 <div class="card">
   <div class="card-title">📊 Desempenho por Criança</div>
+
+  <form method="get" class="filtros-form">
+    <input type="hidden" name="periodo" value="{{ periodo }}">
+    <div class="form-group" style="flex:1 1 260px;">
+      <label for="busca">🔍 Buscar criança</label>
+      <div style="display:flex;gap:.5rem;">
+        <input id="busca" class="form-control" type="search" name="q" value="{{ busca }}" placeholder="Digite o nome…">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+      </div>
+    </div>
+    <div class="form-group" style="flex:0 1 240px;">
+      <label for="ordem">Ordenar por</label>
+      <select id="ordem" name="ordem" class="form-control" onchange="this.form.submit()">
+        <option value="acertos" {% if ordem == 'acertos' %}selected{% endif %}>Menor taxa de acerto</option>
+        <option value="nome" {% if ordem == 'nome' %}selected{% endif %}>Nome (A–Z)</option>
+        <option value="recente" {% if ordem == 'recente' %}selected{% endif %}>Atividade mais recente</option>
+      </select>
+    </div>
+  </form>
+
+  {% if dados %}
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Criança</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr>
+        <tr><th>Criança</th><th>Acertos</th><th>Respostas</th><th>Última atividade</th><th><span class="sr-only">Ações</span></th></tr>
       </thead>
       <tbody>
         {% for d in dados %}
         <tr>
           <td>
-            <a href="{% url 'detalhe_crianca' d.crianca.pk %}" style="font-weight:500;">
-              {{ d.crianca.nome }}
-            </a>
-          </td>
-          <td>{{ d.total }}</td>
-          <td>{{ d.acertos }}</td>
-          <td>
-            <div style="display:flex;align-items:center;gap:.5rem;">
-              <div class="progress" style="width:80px;height:8px;display:inline-block;">
-                <div class="progress-bar {% if d.taxa >= 70 %}success{% elif d.taxa < 40 %}danger{% endif %}"
-                     style="width:{{ d.taxa }}%;"></div>
+            <div class="crianca-cel">
+              {% if d.crianca.foto %}
+                <img src="{{ d.crianca.foto.url }}" alt="" class="avatar">
+              {% else %}
+                <span class="avatar" aria-hidden="true">👧</span>
+              {% endif %}
+              <div>
+                <a href="{% url 'detalhe_crianca' d.crianca.pk %}" style="font-weight:500;">{{ d.crianca.nome }}</a>
+                <div class="muted">{{ d.crianca.idade }} anos</div>
               </div>
-              {{ d.taxa }}%
             </div>
           </td>
           <td>
-            <a href="{% url 'relatorio_crianca' d.crianca.pk %}" class="btn btn-outline btn-sm">
-              Ver relatório
-            </a>
+            {% if d.total %}
+              <div style="display:flex;align-items:center;gap:.5rem;">
+                <div class="progress" style="width:80px;margin:0;" role="img" aria-label="{{ d.taxa_pct }}% de acertos">
+                  <div class="progress-bar {{ d.barra }}" style="width:{{ d.taxa_pct }}%;"></div>
+                </div>
+                <strong>{{ d.taxa_pct }}%</strong>
+              </div>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ d.total }}</td>
+          <td class="muted">{{ d.ultima_txt }}</td>
+          <td>
+            {% if d.total %}
+              <a href="{% url 'relatorio_crianca' d.crianca.pk %}?periodo={{ periodo }}" class="btn btn-primary btn-sm">Ver relatório →</a>
+            {% elif d.sessao_inicio %}
+              <a href="{% url 'iniciar_sessao' d.sessao_inicio.pk %}?crianca={{ d.crianca.pk }}" class="btn btn-success btn-sm">▶ Iniciar sessão</a>
+            {% else %}
+              <a href="{% url 'relatorio_crianca' d.crianca.pk %}" class="btn btn-outline btn-sm">Ver relatório</a>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">🔍</div>
+    <p>Nenhuma criança encontrada com esse nome.</p>
+    <a href="?periodo={{ periodo }}" class="btn btn-primary">Limpar busca</a>
+  </div>
+  {% endif %}
 </div>
+
 {% else %}
 <div class="empty-state">
   <div class="icon">📊</div>
-  <p>Nenhum dado de desempenho ainda. Execute atividades com as crianças para ver os relatórios.</p>
+  <p>Nenhuma criança cadastrada ainda. Cadastre uma criança e execute atividades para ver os relatórios.</p>
+  <a href="{% url 'lista_criancas' %}" class="btn btn-primary">Ir para Crianças</a>
 </div>
 {% endif %}
 

@@ -1,0 +1,30 @@
+<div class="exec-topo">
+  <div class="exec-quem">
+    {% if crianca.foto %}
+      <img src="{{ crianca.foto.url }}" alt="" class="avatar-lg exec-avatar">
+    {% else %}
+      <span class="avatar-lg exec-avatar" aria-hidden="true">👧</span>
+    {% endif %}
+    <div>
+      <div class="exec-nome">{{ crianca.nome }}</div>
+      {% if sessao %}<div class="muted">Sessão: {{ sessao.titulo }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="exec-topo-acoes">
+    {% if tipo_nome %}<span class="selo-tipo">{{ tipo_icone }} {{ tipo_nome }}</span>{% endif %}
+    <a href="{% if sessao %}{% url 'detalhe_sessao' sessao.pk %}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}" class="btn btn-sair">✖ Sair</a>
+  </div>
+</div>
+
+{% if total_atividades %}
+<div class="exec-progresso">
+  <div class="exec-progresso-info">
+    <span>Atividade <strong>{{ indice_atual }}</strong> de {{ total_atividades }}</span>
+    <span>{% if restam %}Faltam {{ restam }}{% else %}Última atividade!{% endif %}</span>
+  </div>
+  <div class="exec-segmentos" role="img" aria-label="Atividade {{ indice_atual }} de {{ total_atividades }}"
+       style="grid-template-columns:repeat({{ total_atividades }},minmax(0,1fr));">
+    {% for s in segmentos %}<div class="exec-segmento tipo-{{ s.tipo }} {{ s.estado }}"></div>{% endfor %}
+  </div>
+</div>
+{% endif %}

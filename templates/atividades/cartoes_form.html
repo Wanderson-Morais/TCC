@@ -2,75 +2,145 @@
 {% block title %}{{ titulo }}{% endblock %}
 {% block page_title %}{{ titulo }}{% endblock %}
 {% block content %}
-<div style="max-width:760px;">
-  <div class="page-header">
+
+<nav class="breadcrumb" aria-label="Você está em">
+  <a href="{% url 'lista_atividades' %}">🎯 Atividades</a>
+  <span aria-hidden="true">›</span>
+  <span aria-current="page">{{ titulo }}</span>
+</nav>
+
+<div class="page-header">
+  <div>
     <h1>{{ titulo }}</h1>
-    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+    <p class="page-sub">A criança toca numa palavra (ex.: “Feliz”) e depois no rosto que combina com ela. Siga os 3 passos abaixo.</p>
   </div>
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-
-    <div class="card">
-      <div class="card-title">📝 Dados da Atividade</div>
-      {% for field in form %}
-        <div class="form-group">
-          <label>{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div class="card">
-      <div class="card-title">🃏 Cartões</div>
-      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
-        Cada cartão é um par: a <strong>palavra</strong> da emoção e a <strong>imagem facial</strong> correspondente.
-        A criança escolhe uma palavra e procura o rosto que combina. Use pelo menos 2 cartões, um por emoção.
-      </p>
-
-      {% if formset.non_form_errors %}
-        <div class="form-error" style="margin-bottom:.75rem;">{{ formset.non_form_errors.0 }}</div>
-      {% endif %}
-
-      {{ formset.management_form }}
-      {% for cartao_form in formset %}
-        <div class="formset-item">
-          <h4>Cartão {{ forloop.counter }}</h4>
-          {% if cartao_form.instance.pk and cartao_form.instance.imagem %}
-            <div style="margin-bottom:.5rem;">
-              <img src="{{ cartao_form.instance.imagem.url }}" alt="{{ cartao_form.instance.get_emocao_display }}"
-                   style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
-            </div>
-          {% endif %}
-          {% for field in cartao_form.visible_fields %}
-            {% if field.name != 'DELETE' %}
-            <div class="form-group">
-              <label>{{ field.label }}</label>
-              {{ field }}
-              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-            </div>
-            {% endif %}
-          {% endfor %}
-          {% for hidden in cartao_form.hidden_fields %}{{ hidden }}{% endfor %}
-          {% if formset.can_delete %}
-            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
-              {{ cartao_form.DELETE.label }}: {{ cartao_form.DELETE }}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div style="display:flex;gap:.75rem;">
-      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
-      {% if atividade %}
-        <a href="{% url 'detalhe_atividade_cartoes' atividade.pk %}" class="btn btn-outline">Cancelar</a>
-      {% else %}
-        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
-      {% endif %}
-    </div>
-  </form>
+  <a href="{% if atividade %}{% url 'detalhe_atividade_cartoes' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline btn-sm">← Voltar</a>
 </div>
+
+<form method="post" enctype="multipart/form-data" id="form-cartoes" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors or formset.non_form_errors %}
+    <div class="alert alert-danger">
+      {% for e in form.non_field_errors %}{{ e }} {% endfor %}
+      {% for e in formset.non_form_errors %}{{ e }} {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="colunas">
+    <div class="col-form">
+
+      <section class="card" aria-labelledby="passo1">
+        <h2 class="card-title" id="passo1"><span class="passo">1</span> Dê um nome à atividade</h2>
+        <p class="card-sub">O nome aparece só para você, na lista de atividades e nos relatórios.</p>
+        <div class="form-group">
+          <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<div class="form-error">{{ form.titulo.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }} <span class="opcional">(opcional)</span></label>
+          {{ form.descricao }}
+        </div>
+      </section>
+
+      {% with pares=formset.pares %}
+      <section class="card" aria-labelledby="passo2">
+        <h2 class="card-title" id="passo2"><span class="passo">2</span> Quais emoções vão ter um par?</h2>
+        <p class="card-sub">Toque nas emoções para escolher. Cada emoção vira um par: uma palavra e um rosto. Escolha pelo menos 2.</p>
+        <div class="emocoes" role="group" aria-labelledby="passo2">
+          {% for p in pares %}
+            <label class="emo-btn emo-multi{% if p.escolhido %} on{% endif %}">
+              <input type="checkbox" class="sr-only" data-escolher="{{ p.valor }}"{% if p.escolhido %} checked{% endif %}>
+              <span class="emo-rosto" aria-hidden="true">{{ p.emoji }}</span>{{ p.nome }}
+            </label>
+          {% endfor %}
+        </div>
+        <p class="contador"><strong id="qtd-pares">0</strong> <span id="qtd-pares-txt">pares</span> escolhidos</p>
+      </section>
+
+      <section class="card" aria-labelledby="passo3">
+        <h2 class="card-title" id="passo3"><span class="passo">3</span> Monte cada par</h2>
+        <p class="card-sub">Coloque a foto do rosto de cada emoção. A palavra já vem preenchida; mude se quiser (ex.: “Alegre” em vez de “Feliz”).</p>
+
+        {{ formset.management_form }}
+        <div class="vazio" id="sem-pares">Escolha as emoções no passo 2 para os pares aparecerem aqui.</div>
+        <div class="pares">
+          {% for p in pares %}
+            {% with f=p.form %}
+            <div class="par" data-par="{{ p.valor }}"{% if not p.escolhido %} hidden{% endif %}>
+              <div class="par-topo">
+                <span class="par-emocao"><span aria-hidden="true">{{ p.emoji }}</span>{{ p.nome }}</span>
+                <span class="selo-certa" data-pronto hidden>✔ Pronto</span>
+                <span class="selo-falta" data-falta hidden>Falta a foto</span>
+              </div>
+
+              <label class="foto-escolher" for="{{ f.imagem.id_for_label }}">
+                <img data-previa alt="" {% if f.instance.pk and f.instance.imagem %}src="{{ f.instance.imagem.url }}"{% else %}hidden{% endif %}>
+                <span class="foto-vazia" data-vazio {% if f.instance.pk and f.instance.imagem %}hidden{% endif %}>
+                  <span aria-hidden="true">📷</span>Escolher foto
+                </span>
+                <span class="foto-trocar" data-trocar {% if not f.instance.pk or not f.instance.imagem %}hidden{% endif %}>Trocar imagem</span>
+              </label>
+              {{ f.imagem }}
+              {% if f.imagem.errors %}<div class="form-error">{{ f.imagem.errors.0 }}</div>{% endif %}
+
+              <div class="form-group">
+                <label for="{{ f.palavra.id_for_label }}">{{ f.palavra.label }}</label>
+                {{ f.palavra }}
+                {% if f.palavra.errors %}<div class="form-error">{{ f.palavra.errors.0 }}</div>{% endif %}
+              </div>
+
+              {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+              {# Par não escolhido = marcado para remoção (ou ignorado, se ainda não existe) #}
+              <input type="checkbox" name="{{ f.DELETE.html_name }}" data-remover-campo hidden{% if not p.escolhido %} checked{% endif %}>
+
+              <button type="button" class="mini mini-remover par-remover" data-remover-par>🗑 Remover par</button>
+            </div>
+            {% endwith %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endwith %}
+
+      <div class="acoes">
+        <button type="submit" class="btn btn-primary" id="salvar-atividade">💾 Salvar atividade</button>
+        <a href="{% if atividade %}{% url 'detalhe_atividade_cartoes' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline">Cancelar</a>
+        <span class="form-hint" id="salvar-dica" hidden>Complete a lista “Antes de salvar” para liberar o botão.</span>
+      </div>
+    </div>
+
+    <aside class="col-lado" aria-label="Ajuda">
+      <section class="card">
+        <h2 class="card-title">👀 Como a criança vai ver</h2>
+        <div class="previa">
+          <div class="previa-painel">
+            <div class="previa-pergunta previa-pequena">Escolha um cartão e encontre o rosto que combina</div>
+            <div class="previa-palavras" id="previa-palavras"></div>
+            <div class="previa-grade" id="previa-grade"></div>
+            <p class="muted" id="previa-vazia">Os pares aparecem aqui.</p>
+          </div>
+        </div>
+        <p class="previa-nota">Na tela da criança, as palavras e os rostos aparecem embaralhados.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">✅ Antes de salvar</h2>
+        <ul class="lista" id="checklist">
+          <li data-item="titulo"><span class="marca"></span>Nome da atividade preenchido</li>
+          <li data-item="pares"><span class="marca"></span>Pelo menos 2 emoções escolhidas</li>
+          <li data-item="fotos"><span class="marca"></span>Todos os pares têm foto</li>
+          <li data-item="palavras"><span class="marca"></span>Todos os pares têm palavra</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', initFormCartoes);
+</script>
 {% endblock %}

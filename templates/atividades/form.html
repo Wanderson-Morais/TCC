@@ -2,67 +2,127 @@
 {% block title %}{{ titulo }}{% endblock %}
 {% block page_title %}{{ titulo }}{% endblock %}
 {% block content %}
-<div style="max-width:760px;">
-  <div class="page-header">
+
+<nav class="breadcrumb" aria-label="Você está em">
+  <a href="{% url 'lista_atividades' %}">🎯 Atividades</a>
+  <span aria-hidden="true">›</span>
+  <span aria-current="page">{{ titulo }}</span>
+</nav>
+
+<div class="page-header">
+  <div>
     <h1>{{ titulo }}</h1>
-    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+    <p class="page-sub">A criança vê uma pergunta e toca no rosto que mostra a emoção certa. Siga os 3 passos abaixo.</p>
   </div>
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-
-    <div class="card">
-      <div class="card-title">📝 Dados da Atividade</div>
-      {% for field in form %}
-        <div class="form-group">
-          <label>{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div class="card">
-      <div class="card-title">🖼️ Imagens das Emoções</div>
-      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
-        Adicione imagens de rostos com emoções. A imagem cuja emoção coincidir com a <strong>Emoção Correta</strong> acima será a resposta correta.
-      </p>
-
-      {{ formset.management_form }}
-      {% for img_form in formset %}
-        <div class="formset-item">
-          <h4>Imagem {{ forloop.counter }}</h4>
-          {% if img_form.instance.pk and img_form.instance.imagem %}
-            <div style="margin-bottom:.5rem;">
-              <img src="{{ img_form.instance.imagem.url }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
-            </div>
-          {% endif %}
-          {% for field in img_form.visible_fields %}
-            <div class="form-group">
-              <label>{{ field.label }}</label>
-              {{ field }}
-              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-            </div>
-          {% endfor %}
-          {% for hidden in img_form.hidden_fields %}{{ hidden }}{% endfor %}
-          {% if formset.can_delete %}
-            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
-              {{ img_form.DELETE.label }}: {{ img_form.DELETE }}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div style="display:flex;gap:.75rem;">
-      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
-      {% if atividade %}
-        <a href="{% url 'detalhe_atividade' atividade.pk %}" class="btn btn-outline">Cancelar</a>
-      {% else %}
-        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
-      {% endif %}
-    </div>
-  </form>
+  <a href="{% if atividade %}{% url 'detalhe_atividade' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline btn-sm">← Voltar</a>
 </div>
+
+<form method="post" enctype="multipart/form-data" id="form-atividade" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors or formset.non_form_errors %}
+    <div class="alert alert-danger">
+      {% for e in form.non_field_errors %}{{ e }} {% endfor %}
+      {% for e in formset.non_form_errors %}{{ e }} {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="colunas">
+    <div class="col-form">
+
+      <section class="card" aria-labelledby="passo1">
+        <h2 class="card-title" id="passo1"><span class="passo">1</span> Dê um nome à atividade</h2>
+        <p class="card-sub">O nome aparece só para você, na lista de atividades e nos relatórios.</p>
+        <div class="form-group">
+          <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<div class="form-error">{{ form.titulo.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }} <span class="opcional">(opcional)</span></label>
+          {{ form.descricao }}
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="passo2">
+        <h2 class="card-title" id="passo2"><span class="passo">2</span> Qual emoção a criança vai procurar?</h2>
+        <p class="card-sub">Toque em uma emoção. Ela será a resposta certa.</p>
+        <div class="emocoes" role="radiogroup" aria-labelledby="passo2">
+          {% for e in form.opcoes_emocao %}
+            <label class="emo-btn{% if e.marcada %} on{% endif %}">
+              <input type="radio" class="sr-only" name="{{ form.emocao_correta.html_name }}" value="{{ e.valor }}"
+                     data-pergunta="{{ e.pergunta }}"{% if e.marcada %} checked{% endif %}>
+              <span class="emo-rosto" aria-hidden="true">{{ e.emoji }}</span>{{ e.nome }}
+            </label>
+          {% endfor %}
+        </div>
+        {% if form.emocao_correta.errors %}<div class="form-error">Escolha a emoção certa.</div>{% endif %}
+        <div class="form-group" style="margin-top:1.25rem;">
+          <label for="{{ form.pergunta.id_for_label }}">{{ form.pergunta.label }}</label>
+          {{ form.pergunta }}
+          <span class="form-hint">Preenchemos para você a partir da emoção. Pode mudar se quiser.</span>
+          {% if form.pergunta.errors %}<div class="form-error">{{ form.pergunta.errors.0 }}</div>{% endif %}
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="passo3">
+        <h2 class="card-title" id="passo3"><span class="passo">3</span> Adicione as imagens</h2>
+        <p class="card-sub">
+          Use de 2 a {{ formset.max_num }} rostos. Pelo menos um precisa mostrar a emoção escolhida no passo 2,
+          que é a resposta certa. A ordem aqui é a ordem na tela da criança.
+        </p>
+
+        {{ formset.management_form }}
+        <div class="imagens" id="imagens" data-max="{{ formset.max_num }}">
+          {% for f in formset %}
+            {% include 'atividades/_slot_imagem.html' with numero=forloop.counter %}
+          {% endfor %}
+          <button type="button" class="adicionar" id="adicionar-imagem">
+            <span aria-hidden="true">＋</span>Adicionar imagem
+          </button>
+        </div>
+        <template id="modelo-imagem">
+          {% include 'atividades/_slot_imagem.html' with f=formset.empty_form numero='' %}
+        </template>
+      </section>
+
+      <div class="acoes">
+        <button type="submit" class="btn btn-primary" id="salvar-atividade">💾 Salvar atividade</button>
+        <a href="{% if atividade %}{% url 'detalhe_atividade' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline">Cancelar</a>
+        <span class="form-hint" id="salvar-dica" hidden>Complete a lista “Antes de salvar” para liberar o botão.</span>
+      </div>
+    </div>
+
+    <aside class="col-lado" aria-label="Ajuda">
+      <section class="card">
+        <h2 class="card-title">👀 Como a criança vai ver</h2>
+        <div class="previa">
+          <div class="previa-painel">
+            <div class="previa-pergunta" id="previa-pergunta"></div>
+            <div class="previa-grade" id="previa-grade"></div>
+            <p class="muted" id="previa-vazia">As imagens aparecem aqui.</p>
+          </div>
+        </div>
+        <p class="previa-nota">A borda verde aparece só para você: é a resposta certa.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">✅ Antes de salvar</h2>
+        <ul class="lista" id="checklist">
+          <li data-item="titulo"><span class="marca"></span>Nome da atividade preenchido</li>
+          <li data-item="emocao"><span class="marca"></span>Emoção certa escolhida</li>
+          <li data-item="imagens"><span class="marca"></span>Pelo menos 2 imagens com emoção</li>
+          <li data-item="certa"><span class="marca"></span>Uma imagem mostra a emoção certa</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => initFormAtividade('{{ formset.prefix }}'));
+</script>
 {% endblock %}

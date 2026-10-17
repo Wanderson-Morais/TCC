@@ -1,0 +1,11 @@
+{% if sessao and not proxima_url %}
+<div class="exec-fim" id="exec-fim" hidden>
+  <span class="exec-fim-emoji" aria-hidden="true">🎉</span>
+  <h1>Parabéns, {{ crianca.nome }}!</h1>
+  <p>Você terminou todas as atividades da sessão.</p>
+  <div class="exec-fim-acoes">
+    <a href="{% url 'detalhe_sessao' sessao.pk %}" class="btn btn-outline btn-lg">← Voltar para a sessão</a>
+    <a href="{% url 'relatorio_crianca' crianca.pk %}" class="btn btn-primary btn-lg">📊 Ver relatório</a>
+  </div>
+</div>
+{% endif %}

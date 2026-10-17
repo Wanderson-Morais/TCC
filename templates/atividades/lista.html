@@ -7,14 +7,15 @@
   <h1>Atividades</h1>
   {% if user.role == 'psicologo' %}
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-      <a href="{% url 'criar_atividade' %}" class="btn btn-primary">+ Nova Atividade</a>
-      <a href="{% url 'criar_atividade_cartoes' %}" class="btn btn-primary">+ Nova Atividade de Cartões</a>
-      <a href="{% url 'criar_atividade_cenario' %}" class="btn btn-primary">+ Nova Atividade de Cenários</a>
+      <a href="{% url 'criar_atividade' %}" class="btn btn-tipo tipo-imagens">+ Nova Atividade de Imagens</a>
+      <a href="{% url 'criar_atividade_cartoes' %}" class="btn btn-tipo tipo-cartoes">+ Nova Atividade de Cartões</a>
+      <a href="{% url 'criar_atividade_cenario' %}" class="btn btn-tipo tipo-cenarios">+ Nova Atividade de Cenários</a>
     </div>
   {% endif %}
 </div>
 
-<h2 class="section-title">🎯 Identificação de Emoções</h2>
+<section class="secao-tipo tipo-imagens">
+<h2 class="section-title">🖼️ Identificação de Emoções <span class="selo-tipo">Imagens</span></h2>
 
 {% if atividades %}
   <div class="atividade-grid">
@@ -45,7 +46,10 @@
   </div>
 {% endif %}
 
-<h2 class="section-title" style="margin-top:2rem;">🃏 Cartões Correspondentes</h2>
+</section>
+
+<section class="secao-tipo tipo-cartoes">
+<h2 class="section-title">🃏 Cartões Correspondentes <span class="selo-tipo">Cartões</span></h2>
 
 {% if atividades_cartoes %}
   <div class="atividade-grid">
@@ -76,7 +80,10 @@
   </div>
 {% endif %}
 
-<h2 class="section-title" style="margin-top:2rem;">🏞️ Organização de Emoções em Cenários</h2>
+</section>
+
+<section class="secao-tipo tipo-cenarios">
+<h2 class="section-title">🏞️ Organização de Emoções em Cenários <span class="selo-tipo">Cenários</span></h2>
 
 {% if atividades_cenarios %}
   <div class="atividade-grid">
@@ -104,4 +111,5 @@
     {% endif %}
   </div>
 {% endif %}
+</section>
 {% endblock %}

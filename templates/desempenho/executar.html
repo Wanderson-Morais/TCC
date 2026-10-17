@@ -1,80 +1,55 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{{ atividade.titulo }} | EmoTEA</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  <style>
-    body { background: linear-gradient(135deg,#e8f4fd,#f0f9f0); }
-    .exec-wrapper { min-height: 100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1rem; }
-    .exec-card { background:#fff; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,.12); padding:2.5rem; max-width:900px; width:100%; }
-    .exec-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-    .exec-crianca { font-size:.92rem; color:#6b7a8d; }
-  </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}{{ atividade.titulo }}{% endblock %}
+{% block page_title %}{% if sessao %}▶ Sessão em andamento{% else %}▶ Atividade{% endif %}{% endblock %}
+{% block content %}
 
-<div class="exec-wrapper">
-  <div class="exec-card">
-    <div class="exec-header">
-      <div class="exec-crianca">👧 {{ crianca.nome }}</div>
-      <a href="{% url 'detalhe_crianca' crianca.pk %}" style="font-size:.85rem;color:#6b7a8d;">✖ Sair</a>
-    </div>
+<div class="exec-area tipo-imagens">
+  <div class="exec-painel">
 
-    <div class="exec-screen">
-      {% if total_atividades %}
-      <div style="margin-bottom:1rem;">
-        <div style="font-size:.85rem;color:#6b7a8d;margin-bottom:.3rem;">
-          Atividade {{ indice_atual }} de {{ total_atividades }}
-        </div>
-        <div class="progress">
-          <div class="progress-bar"
-               style="width:{% widthratio indice_atual total_atividades 100 %}%;"></div>
-        </div>
-      </div>
-      {% endif %}
+    <div id="exec-atividade">
+      {% include 'desempenho/_exec_cabecalho.html' with tipo_nome='Imagens' tipo_icone='🖼️' %}
 
-      <div class="exec-pergunta">{{ atividade.pergunta }}</div>
+      <h1 class="exec-pergunta">{{ atividade.pergunta }}</h1>
+      <p class="exec-instrucao" id="exec-instrucao">Toque no rosto que responde à pergunta.</p>
 
-      <div class="exec-imagens">
+      <div class="exec-grade" id="exec-grade">
         {% for img in imagens %}
-        <button class="exec-img-btn"
-                data-imagem-id="{{ img.pk }}"
-                data-emocao="{{ img.emocao }}"
-                type="button">
-          <img src="{{ img.imagem.url }}" alt="{{ img.get_emocao_display }}">
+        <button class="exec-img-btn" type="button" aria-label="Opção {{ forloop.counter }}"
+                data-imagem-id="{{ img.pk }}" data-emocao="{{ img.emocao }}">
+          <img src="{{ img.imagem.url }}" alt="">
         </button>
         {% endfor %}
       </div>
 
-      <div id="next-btn-wrap" style="margin-top:1.5rem;">
-        {% if proxima_url %}
-          <a id="next-btn"
-             href="{{ proxima_url }}"
-             class="btn btn-success btn-lg"
-             style="display:none;">
-            Próxima atividade →
-          </a>
-        {% else %}
-          <a id="next-btn"
-             href="{% if sessao %}{% url 'detalhe_sessao' sessao.pk %}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}"
-             class="btn btn-primary btn-lg"
-             style="display:none;">
-            {% if total_atividades %}Finalizar sessão ✔{% else %}Continuar →{% endif %}
-          </a>
-        {% endif %}
+      <div class="exec-retorno acerto" id="retorno-acerto" role="status" hidden>
+        <div class="exec-retorno-texto">
+          <span class="exec-retorno-emoji" aria-hidden="true">🎉</span>
+          <div>
+            <strong>Muito bem! Você acertou!</strong>
+            <span>A resposta é: {{ atividade.get_emocao_correta_display }}.</span>
+          </div>
+        </div>
+        {% include 'desempenho/_botao_seguir.html' with classe='btn-success' %}
+      </div>
+      <div class="exec-retorno erro" id="retorno-erro" role="status" hidden>
+        <div class="exec-retorno-texto">
+          <span class="exec-retorno-emoji" aria-hidden="true">😊</span>
+          <div>
+            <strong>Quase lá!</strong>
+            <span>O rosto certo ({{ atividade.get_emocao_correta_display }}) é o que está com borda verde ✔.</span>
+          </div>
+        </div>
+        {% include 'desempenho/_botao_seguir.html' with classe='btn-primary' %}
       </div>
     </div>
+
+    {% include 'desempenho/_exec_fim.html' %}
   </div>
 </div>
 
-<div class="feedback-overlay" id="feedback-overlay">
-  <div class="feedback-box" id="feedback-box"></div>
-</div>
+{% endblock %}
 
-<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     initExecution(
@@ -85,5 +60,4 @@
     );
   });
 </script>
-</body>
-</html>
+{% endblock %}

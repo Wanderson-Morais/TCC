@@ -3,218 +3,111 @@
 {% block page_title %}Relatório: {{ crianca.nome }}{% endblock %}
 {% block content %}
 
+<nav class="breadcrumb" aria-label="Você está em">
+  {% if pode_ver_geral %}
+    <a href="{% url 'relatorio_geral' %}?periodo={{ periodo }}">📊 Relatórios</a>
+  {% else %}
+    <a href="{% url 'detalhe_crianca' crianca.pk %}">👧 {{ crianca.nome }}</a>
+  {% endif %}
+  <span aria-hidden="true">›</span>
+  <span aria-current="page">{% if pode_ver_geral %}{{ crianca.nome }}{% else %}Relatório{% endif %}</span>
+</nav>
+
 <div class="page-header">
-  <h1>Relatório — {{ crianca.nome }}</h1>
-  <a href="{% url 'detalhe_crianca' crianca.pk %}" class="btn btn-outline btn-sm">← Voltar</a>
+  <div class="perfil">
+    {% if crianca.foto %}
+      <img src="{{ crianca.foto.url }}" alt="" class="avatar-lg">
+    {% else %}
+      <span class="avatar-lg" aria-hidden="true">👧</span>
+    {% endif %}
+    <div>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+        <h1>{{ crianca.nome }}</h1>
+        <span class="badge {{ situacao.badge }}">{{ situacao.icone }} {{ situacao.label }}</span>
+      </div>
+      <div class="muted">{{ crianca.idade }} anos · Última atividade: {{ ultima|lower }}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="{% if pode_ver_geral %}{% url 'relatorio_geral' %}?periodo={{ periodo }}{% else %}{% url 'detalhe_crianca' crianca.pk %}{% endif %}" class="btn btn-outline btn-sm">← Voltar</a>
+    <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">🖨 Imprimir</button>
+    {% if sessao_inicio %}
+      <a href="{% url 'iniciar_sessao' sessao_inicio.pk %}?crianca={{ crianca.pk }}" class="btn btn-success btn-sm">▶ Iniciar sessão</a>
+    {% endif %}
+  </div>
 </div>
 
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-value">{{ total }}</div>
-    <div class="stat-label">Total de tentativas</div>
-  </div>
-  <div class="stat-card green">
-    <div class="stat-value">{{ acertos }}</div>
-    <div class="stat-label">Acertos</div>
-  </div>
-  <div class="stat-card red">
-    <div class="stat-value">{{ erros }}</div>
-    <div class="stat-label">Erros</div>
-  </div>
-  <div class="stat-card orange">
-    <div class="stat-value">{{ taxa }}%</div>
-    <div class="stat-label">Taxa de acerto</div>
-  </div>
+<div class="periodo-bar">
+  <nav class="seg" aria-label="Período">
+    {% for valor, label in periodos %}
+      <a href="?periodo={{ valor }}&amp;aba={{ aba }}" data-aba-link class="seg-btn{% if valor == periodo %} on{% endif %}"{% if valor == periodo %} aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <span class="muted">Mostrando: <strong style="color:var(--dark);">{{ periodo_label }}</strong></span>
 </div>
 
-<!-- Progress bar -->
-<div class="card">
-  <div class="card-title">📈 Taxa de Acerto Geral</div>
-  <div class="progress" style="height:18px;">
-    <div class="progress-bar {% if taxa >= 70 %}success{% elif taxa < 40 %}danger{% endif %}"
-         style="width:{{ taxa }}%;"></div>
+<div class="tabs" role="tablist" aria-label="Seções do relatório" data-abas>
+  <a href="?periodo={{ periodo }}&amp;aba=resumo" role="tab" id="tab-resumo" data-aba="resumo" aria-controls="painel-resumo" class="tab{% if aba == 'resumo' %} on{% endif %}" aria-selected="{% if aba == 'resumo' %}true{% else %}false{% endif %}">📋 Resumo</a>
+  <a href="?periodo={{ periodo }}&amp;aba=atividade" role="tab" id="tab-atividade" data-aba="atividade" aria-controls="painel-atividade" class="tab{% if aba == 'atividade' %} on{% endif %}" aria-selected="{% if aba == 'atividade' %}true{% else %}false{% endif %}">🎯 Por atividade</a>
+</div>
+
+<!-- Resumo -->
+<div role="tabpanel" id="painel-resumo" aria-labelledby="tab-resumo"{% if aba != 'resumo' %} hidden{% endif %}>
+  <div class="stats-grid">
+    <div class="stat-card green">
+      <div class="stat-value">{{ taxa_pct }}%</div>
+      <div class="stat-label">Taxa de acerto{% if total %} · {{ acertos }} de {{ total }}{% endif %}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ total }}</div>
+      <div class="stat-label">Total de tentativas</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-value">{% if tempo_medio is not None %}{{ tempo_medio|floatformat:1 }} s{% else %}—{% endif %}</div>
+      <div class="stat-label">Tempo médio por resposta</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ sessoes }}</div>
+      <div class="stat-label">Sessões realizadas</div>
+    </div>
   </div>
-  <div style="font-size:.85rem;color:#6b7a8d;margin-top:.4rem;">{{ taxa }}% de aproveitamento</div>
 </div>
 
 <!-- Por atividade -->
-{% if is_psicologo %}
-<div class="card">
-  <div class="card-title">🎯 Por Atividade</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Atividade</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr></thead>
-      <tbody>
-        {% for row in por_atividade %}
-        <tr>
-          <td><a href="{% url 'detalhe_atividade' row.atividade__pk %}">{{ row.atividade__titulo }}</a></td>
-          <td>{{ row.total }}</td>
-          <td>{{ row.acertos }}</td>
-          <td>
-            {% widthratio row.acertos row.total 100 as pct %}
-            <div class="progress" style="height:8px;width:80px;display:inline-block;vertical-align:middle;">
-              <div class="progress-bar" style="width:{{ pct }}%;"></div>
-            </div>
-            {{ pct }}%
-          </td>
-          <td>
-            <a href="{% url 'executar_atividade' crianca.pk row.atividade__pk %}" class="btn btn-success btn-sm">▶ Executar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
-
-{% if is_psicologo and cartoes_por_atividade %}
-<div class="card">
-  <div class="card-title">🃏 Por Atividade de Cartões</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Atividade</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr></thead>
-      <tbody>
-        {% for row in cartoes_por_atividade %}
-        <tr>
-          <td><a href="{% url 'detalhe_atividade_cartoes' row.atividade__pk %}">{{ row.atividade__titulo }}</a></td>
-          <td>{{ row.total }}</td>
-          <td>{{ row.acertos }}</td>
-          <td>
-            {% widthratio row.acertos row.total 100 as pct %}
-            <div class="progress" style="height:8px;width:80px;display:inline-block;vertical-align:middle;">
-              <div class="progress-bar" style="width:{{ pct }}%;"></div>
-            </div>
-            {{ pct }}%
-          </td>
-          <td>
-            <a href="{% url 'executar_cartoes' crianca.pk row.atividade__pk %}" class="btn btn-success btn-sm">▶ Executar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
-
-{% if is_psicologo and cenarios_por_atividade %}
-<div class="card">
-  <div class="card-title">🏞️ Por Atividade de Cenários</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Atividade</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th><th></th></tr></thead>
-      <tbody>
-        {% for row in cenarios_por_atividade %}
-        <tr>
-          <td><a href="{% url 'detalhe_atividade_cenario' row.atividade__pk %}">{{ row.atividade__titulo }}</a></td>
-          <td>{{ row.total }}</td>
-          <td>{{ row.acertos }}</td>
-          <td>
-            {% widthratio row.acertos row.total 100 as pct %}
-            <div class="progress" style="height:8px;width:80px;display:inline-block;vertical-align:middle;">
-              <div class="progress-bar" style="width:{{ pct }}%;"></div>
-            </div>
-            {{ pct }}%
-          </td>
-          <td>
-            <a href="{% url 'executar_cenario' crianca.pk row.atividade__pk %}" class="btn btn-success btn-sm">▶ Executar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
-
-<!-- Histórico -->
-{% if desempenhos %}
-<div class="card">
-  <div class="card-title">🕐 Histórico Recente</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Atividade</th><th>Sessão</th><th>Resultado</th><th>Tempo (s)</th></tr></thead>
-      <tbody>
-        {% for d in desempenhos %}
-        <tr>
-          <td style="font-size:.83rem;color:#6b7a8d;">{{ d.created_at|date:"d/m/Y H:i" }}</td>
-          <td>{{ d.atividade.titulo }}</td>
-          <td>{{ d.sessao.titulo|default:'—' }}</td>
-          <td>
-            {% if d.correto %}
-              <span class="badge badge-success">Acerto ✔</span>
-            {% else %}
-              <span class="badge badge-danger">Erro ✖</span>
+<div role="tabpanel" id="painel-atividade" aria-labelledby="tab-atividade"{% if aba != 'atividade' %} hidden{% endif %}>
+  <div class="card">
+    <div class="card-title">🎯 Por Atividade</div>
+    {% if por_atividade %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Atividade</th><th>Tipo</th><th>Tentativas</th><th>Acertos</th><th>Taxa</th>{% if is_psicologo %}<th><span class="sr-only">Ações</span></th>{% endif %}</tr></thead>
+        <tbody>
+          {% for a in por_atividade %}
+          <tr>
+            <td>{% if is_psicologo %}<a href="{% url a.url_detalhe a.pk %}">{{ a.titulo }}</a>{% else %}{{ a.titulo }}{% endif %}</td>
+            <td><span class="badge badge-info">{{ a.tipo_label }}</span></td>
+            <td>{{ a.total }}</td>
+            <td>{{ a.acertos }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:.5rem;">
+                <div class="progress" style="width:80px;margin:0;" role="img" aria-label="{{ a.pct }}% de acertos">
+                  <div class="progress-bar {{ a.barra }}" style="width:{{ a.pct }}%;"></div>
+                </div>
+                {{ a.pct }}%
+              </div>
+            </td>
+            {% if is_psicologo %}
+            <td><a href="{% url a.url_executar crianca.pk a.pk %}" class="btn btn-success btn-sm">▶ Executar</a></td>
             {% endif %}
-          </td>
-          <td style="color:#6b7a8d;">{{ d.tempo_resposta|default:'—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="muted">Sem respostas neste período.</p>
+    {% endif %}
   </div>
 </div>
-{% endif %}
-
-{% if desempenhos_cartoes %}
-<div class="card">
-  <div class="card-title">🃏 Histórico Recente — Cartões Correspondentes</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Atividade</th><th>Sessão</th><th>Palavra</th><th>Imagem escolhida</th><th>Resultado</th><th>Tempo (s)</th></tr></thead>
-      <tbody>
-        {% for d in desempenhos_cartoes %}
-        <tr>
-          <td style="font-size:.83rem;color:#6b7a8d;">{{ d.created_at|date:"d/m/Y H:i" }}</td>
-          <td>{{ d.atividade.titulo }}</td>
-          <td>{{ d.sessao.titulo|default:'—' }}</td>
-          <td>{{ d.cartao.palavra|default:'—' }}</td>
-          <td>{{ d.cartao_selecionado.get_emocao_display|default:'—' }}</td>
-          <td>
-            {% if d.correto %}
-              <span class="badge badge-success">Acerto ✔</span>
-            {% else %}
-              <span class="badge badge-danger">Erro ✖</span>
-            {% endif %}
-          </td>
-          <td style="color:#6b7a8d;">{{ d.tempo_resposta|default:'—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
-
-{% if desempenhos_cenarios %}
-<div class="card">
-  <div class="card-title">🏞️ Histórico Recente — Emoções em Cenários</div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Atividade</th><th>Sessão</th><th>Cenário</th><th>Emoção escolhida</th><th>Resultado</th><th>Tempo (s)</th></tr></thead>
-      <tbody>
-        {% for d in desempenhos_cenarios %}
-        <tr>
-          <td style="font-size:.83rem;color:#6b7a8d;">{{ d.created_at|date:"d/m/Y H:i" }}</td>
-          <td>{{ d.atividade.titulo }}</td>
-          <td>{{ d.sessao.titulo|default:'—' }}</td>
-          <td>{{ d.cenario.descricao|default:'—'|truncatechars:60 }}</td>
-          <td>{{ d.get_emocao_selecionada_display }}</td>
-          <td>
-            {% if d.correto %}
-              <span class="badge badge-success">Acerto ✔</span>
-            {% else %}
-              <span class="badge badge-danger">Erro ✖</span>
-            {% endif %}
-          </td>
-          <td style="color:#6b7a8d;">{{ d.tempo_resposta|default:'—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
 
 {% endblock %}

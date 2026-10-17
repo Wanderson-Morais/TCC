@@ -86,7 +86,19 @@
 <!-- Executar atividades -->
 {% if sessao.atividades.all or sessao.atividades_cartoes.all or sessao.atividades_cenarios.all %}{% if sessao.criancas.all %}
 <div class="card">
-  <div class="card-title">▶ Iniciar Atividade</div>
+  <div class="card-title">▶ Iniciar Sessão Completa</div>
+  <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:.75rem;">Executa todas as atividades da sessão em sequência.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+    {% for c in sessao.criancas.all %}
+      <a href="{% url 'iniciar_sessao' sessao.pk %}?crianca={{ c.pk }}" class="btn btn-primary">
+        ▶ Iniciar sessão · {{ c.nome }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">▶ Iniciar Atividade Avulsa</div>
   <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
     {% for c in sessao.criancas.all %}
       {% for a in sessao.atividades.all %}

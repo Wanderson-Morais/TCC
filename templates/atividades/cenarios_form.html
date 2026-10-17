@@ -2,76 +2,122 @@
 {% block title %}{{ titulo }}{% endblock %}
 {% block page_title %}{{ titulo }}{% endblock %}
 {% block content %}
-<div style="max-width:760px;">
-  <div class="page-header">
+
+<nav class="breadcrumb" aria-label="Você está em">
+  <a href="{% url 'lista_atividades' %}">🎯 Atividades</a>
+  <span aria-hidden="true">›</span>
+  <span aria-current="page">{{ titulo }}</span>
+</nav>
+
+<div class="page-header">
+  <div>
     <h1>{{ titulo }}</h1>
-    <a href="{% url 'lista_atividades' %}" class="btn btn-outline btn-sm">← Voltar</a>
+    <p class="page-sub">A criança vê uma situação do dia a dia e arrasta a emoção certa até a cena. Siga os 2 passos abaixo.</p>
   </div>
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-
-    <div class="card">
-      <div class="card-title">📝 Dados da Atividade</div>
-      {% for field in form %}
-        <div class="form-group">
-          <label>{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-          {% if field.help_text %}<div class="form-hint">{{ field.help_text }}</div>{% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div class="card">
-      <div class="card-title">🏞️ Cenários</div>
-      <p style="font-size:.85rem;color:#6b7a8d;margin-bottom:1rem;">
-        Cada cenário é uma situação do cotidiano: a <strong>imagem</strong>, uma <strong>descrição</strong> curta e a
-        <strong>emoção correta</strong>. A criança arrasta o rótulo da emoção até a cena correspondente.
-        Use pelo menos 2 cenários com emoções diferentes.
-      </p>
-
-      {% if formset.non_form_errors %}
-        <div class="form-error" style="margin-bottom:.75rem;">{{ formset.non_form_errors.0 }}</div>
-      {% endif %}
-
-      {{ formset.management_form }}
-      {% for cenario_form in formset %}
-        <div class="formset-item">
-          <h4>Cenário {{ forloop.counter }}</h4>
-          {% if cenario_form.instance.pk and cenario_form.instance.imagem %}
-            <div style="margin-bottom:.5rem;">
-              <img src="{{ cenario_form.instance.imagem.url }}" alt="{{ cenario_form.instance.descricao }}"
-                   style="width:120px;height:80px;object-fit:cover;border-radius:8px;">
-            </div>
-          {% endif %}
-          {% for field in cenario_form.visible_fields %}
-            {% if field.name != 'DELETE' %}
-            <div class="form-group">
-              <label>{{ field.label }}</label>
-              {{ field }}
-              {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
-            </div>
-            {% endif %}
-          {% endfor %}
-          {% for hidden in cenario_form.hidden_fields %}{{ hidden }}{% endfor %}
-          {% if formset.can_delete %}
-            <div class="formset-delete" style="font-size:.82rem;color:#e05252;">
-              {{ cenario_form.DELETE.label }}: {{ cenario_form.DELETE }}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <div style="display:flex;gap:.75rem;">
-      <button type="submit" class="btn btn-primary">Salvar Atividade</button>
-      {% if atividade %}
-        <a href="{% url 'detalhe_atividade_cenario' atividade.pk %}" class="btn btn-outline">Cancelar</a>
-      {% else %}
-        <a href="{% url 'lista_atividades' %}" class="btn btn-outline">Cancelar</a>
-      {% endif %}
-    </div>
-  </form>
+  <a href="{% if atividade %}{% url 'detalhe_atividade_cenario' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline btn-sm">← Voltar</a>
 </div>
+
+<form method="post" enctype="multipart/form-data" id="form-cenarios" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors or formset.non_form_errors %}
+    <div class="alert alert-danger">
+      {% for e in form.non_field_errors %}{{ e }} {% endfor %}
+      {% for e in formset.non_form_errors %}{{ e }} {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="colunas">
+    <div class="col-form">
+
+      <section class="card" aria-labelledby="passo1">
+        <h2 class="card-title" id="passo1"><span class="passo">1</span> Dê um nome à atividade</h2>
+        <p class="card-sub">O nome aparece só para você, na lista de atividades e nos relatórios.</p>
+        <div class="form-group">
+          <label for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<div class="form-error">{{ form.titulo.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.descricao.id_for_label }}">{{ form.descricao.label }} <span class="opcional">(opcional)</span></label>
+          {{ form.descricao }}
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="passo2">
+        <h2 class="card-title" id="passo2"><span class="passo">2</span> Monte as cenas</h2>
+        <p class="card-sub">
+          Para cada cena, coloque a foto, conte o que está acontecendo e marque a emoção certa.
+          Use de 2 a {{ formset.max_num }} cenas, com pelo menos 2 emoções diferentes.
+        </p>
+        <p class="aviso-info">
+          <span aria-hidden="true">💡</span>
+          <span>Na sessão, <strong>cada cena conta como uma atividade</strong> e aparece nesta ordem. Use ▲ ▼ para mudar a ordem.</span>
+        </p>
+
+        {{ formset.management_form }}
+        <div class="cenas" id="cenas" data-max="{{ formset.max_num }}">
+          {% for f in formset %}
+            {% include 'atividades/_cena.html' with numero=forloop.counter %}
+          {% endfor %}
+          <button type="button" class="adicionar adicionar-largo" id="adicionar-cena">
+            <span aria-hidden="true">＋</span>Adicionar cena
+          </button>
+        </div>
+        <template id="modelo-cena">
+          {% include 'atividades/_cena.html' with f=formset.empty_form numero='' %}
+        </template>
+      </section>
+
+      <div class="acoes">
+        <button type="submit" class="btn btn-primary" id="salvar-atividade">💾 Salvar atividade</button>
+        <a href="{% if atividade %}{% url 'detalhe_atividade_cenario' atividade.pk %}{% else %}{% url 'lista_atividades' %}{% endif %}" class="btn btn-outline">Cancelar</a>
+        <span class="form-hint" id="salvar-dica" hidden>Complete a lista “Antes de salvar” para liberar o botão.</span>
+      </div>
+    </div>
+
+    <aside class="col-lado" aria-label="Ajuda">
+      <section class="card">
+        <h2 class="card-title">👀 Como a criança vai ver</h2>
+        <div class="previa">
+          <div class="previa-painel">
+            <div class="muted" id="previa-contador"></div>
+            <div class="previa-pergunta previa-pequena">Como a pessoa está se sentindo?</div>
+            <div class="previa-cena">
+              <div class="previa-cena-foto">
+                <img id="previa-foto" alt="" hidden>
+                <span id="previa-sem-foto" aria-hidden="true">📷</span>
+              </div>
+              <div class="previa-desc" id="previa-desc"></div>
+              <div class="previa-alvo">Solte a emoção aqui</div>
+            </div>
+            <div class="previa-palavras" id="previa-rotulos"></div>
+          </div>
+        </div>
+        <div class="previa-nav">
+          <button type="button" class="mini" id="previa-anterior">◀ Anterior</button>
+          <button type="button" class="mini" id="previa-proxima">Próxima ▶</button>
+        </div>
+        <p class="previa-nota">Os botões de emoção são as emoções usadas nas cenas, uma vez cada.</p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">✅ Antes de salvar</h2>
+        <ul class="lista" id="checklist">
+          <li data-item="titulo"><span class="marca"></span>Nome da atividade preenchido</li>
+          <li data-item="prontas"><span class="marca"></span>Pelo menos 2 cenas prontas</li>
+          <li data-item="emocoes"><span class="marca"></span>Pelo menos 2 emoções diferentes</li>
+          <li data-item="completas"><span class="marca"></span>Todas as cenas completas</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => initFormCenarios('{{ formset.prefix }}'));
+</script>
 {% endblock %}

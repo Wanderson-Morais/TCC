@@ -1,0 +1,55 @@
+<div class="cena" data-cena>
+  <div class="cena-topo">
+    <span class="cena-nome">Cena <span data-numero>{{ numero }}</span></span>
+    <span class="selo-certa" data-pronta hidden>✔ Pronta</span>
+    <span class="selo-falta" data-falta hidden></span>
+  </div>
+
+  <div class="cena-corpo">
+    <div class="cena-foto-col">
+      <label class="foto-escolher foto-cena" for="{{ f.imagem.id_for_label }}">
+        <img data-previa alt="" {% if f.instance.pk and f.instance.imagem %}src="{{ f.instance.imagem.url }}"{% else %}hidden{% endif %}>
+        <span class="foto-vazia" data-vazio {% if f.instance.pk and f.instance.imagem %}hidden{% endif %}>
+          <span aria-hidden="true">📷</span>Escolher foto da cena
+        </span>
+        <span class="foto-trocar" data-trocar {% if not f.instance.pk or not f.instance.imagem %}hidden{% endif %}>Trocar imagem</span>
+      </label>
+      {{ f.imagem }}
+      {% if f.imagem.errors %}<div class="form-error">{{ f.imagem.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="cena-campos">
+      <div class="form-group">
+        <label for="{{ f.descricao.id_for_label }}">{{ f.descricao.label }}</label>
+        {{ f.descricao }}
+        <span class="form-hint">Dica: termine com uma pergunta, como “Como o Theo está se sentindo?”.</span>
+        {% if f.descricao.errors %}<div class="form-error">{{ f.descricao.errors.0 }}</div>{% endif %}
+      </div>
+      <div role="radiogroup" aria-label="{{ f.emocao_correta.label }}">
+        <span class="rotulo">{{ f.emocao_correta.label }}</span>
+        <div class="chips chips-emocao">
+          {% for e in f.opcoes_emocao %}
+            <label class="chip{% if e.marcada %} on{% endif %}">
+              <input type="radio" class="sr-only" name="{{ f.emocao_correta.html_name }}" value="{{ e.valor }}"
+                     data-emocao-cena data-nome="{{ e.nome }}"{% if e.marcada %} checked{% endif %}>
+              <span aria-hidden="true">{{ e.emoji }}</span>{{ e.nome }}
+            </label>
+          {% endfor %}
+        </div>
+        {% if f.emocao_correta.errors %}<div class="form-error">Escolha a emoção certa desta cena.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+  <span hidden>{{ f.DELETE }}</span>
+
+  <div class="cena-acoes">
+    <div class="cena-botoes">
+      <button type="button" class="mini" data-mover="-1">▲ Subir</button>
+      <button type="button" class="mini" data-mover="1">▼ Descer</button>
+      <button type="button" class="mini" data-ver>👀 Ver na prévia</button>
+    </div>
+    <button type="button" class="mini mini-remover" data-remover>🗑 Remover cena</button>
+  </div>
+</div>

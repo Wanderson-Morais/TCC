@@ -1,0 +1,7 @@
+{% if proxima_url %}
+  <a href="{{ proxima_url }}" class="btn {{ classe }} btn-lg">{% firstof texto_proxima 'Próxima atividade →' %}</a>
+{% elif sessao %}
+  <button type="button" class="btn {{ classe }} btn-lg" data-terminar>Terminar ✔</button>
+{% else %}
+  <a href="{% url 'detalhe_crianca' crianca.pk %}" class="btn {{ classe }} btn-lg">Continuar →</a>
+{% endif %}

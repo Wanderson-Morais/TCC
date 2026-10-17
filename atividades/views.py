@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Atividade, AtividadeCartoes, AtividadeCenario, ImagemEmocao
 from .forms import (
-    AtividadeForm, ImagemFormSet, AtividadeCartoesForm, CartaoFormSet,
-    AtividadeCenarioForm, CenarioFormSet,
+    AtividadeForm, ImagemFormSet, ImagemFormSetEdicao, AtividadeCartoesForm, cartao_formset,
+    AtividadeCenarioForm, CenarioFormSet, CenarioFormSetEdicao,
 )
 from accounts.decorators import psicologo_required, adulto_required
 
@@ -37,6 +37,7 @@ def lista_atividades(request):
 def criar_atividade(request):
     form = AtividadeForm(request.POST or None)
     formset = ImagemFormSet(request.POST or None, request.FILES or None)
+    formset.emocao_correta = request.POST.get('emocao_correta')
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         atividade = form.save(commit=False)
         atividade.psicologo = request.user
@@ -48,7 +49,7 @@ def criar_atividade(request):
     return render(request, 'atividades/form.html', {
         'form': form,
         'formset': formset,
-        'titulo': 'Nova Atividade',
+        'titulo': 'Nova Atividade de Imagens',
     })
 
 
@@ -72,7 +73,8 @@ def detalhe_atividade(request, pk):
 def editar_atividade(request, pk):
     atividade = get_object_or_404(Atividade, pk=pk, psicologo=request.user)
     form = AtividadeForm(request.POST or None, instance=atividade)
-    formset = ImagemFormSet(request.POST or None, request.FILES or None, instance=atividade)
+    formset = ImagemFormSetEdicao(request.POST or None, request.FILES or None, instance=atividade)
+    formset.emocao_correta = request.POST.get('emocao_correta')
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         form.save()
         formset.save()
@@ -81,7 +83,7 @@ def editar_atividade(request, pk):
     return render(request, 'atividades/form.html', {
         'form': form,
         'formset': formset,
-        'titulo': 'Editar Atividade',
+        'titulo': 'Editar Atividade de Imagens',
         'atividade': atividade,
     })
 
@@ -103,7 +105,7 @@ def excluir_atividade(request, pk):
 @psicologo_required
 def criar_atividade_cartoes(request):
     form = AtividadeCartoesForm(request.POST or None)
-    formset = CartaoFormSet(request.POST or None, request.FILES or None)
+    formset = cartao_formset(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         atividade = form.save(commit=False)
         atividade.psicologo = request.user
@@ -141,7 +143,7 @@ def detalhe_atividade_cartoes(request, pk):
 def editar_atividade_cartoes(request, pk):
     atividade = get_object_or_404(AtividadeCartoes, pk=pk, psicologo=request.user)
     form = AtividadeCartoesForm(request.POST or None, instance=atividade)
-    formset = CartaoFormSet(request.POST or None, request.FILES or None, instance=atividade)
+    formset = cartao_formset(request.POST or None, request.FILES or None, instance=atividade)
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         form.save()
         formset.save()
@@ -210,7 +212,7 @@ def detalhe_atividade_cenario(request, pk):
 def editar_atividade_cenario(request, pk):
     atividade = get_object_or_404(AtividadeCenario, pk=pk, psicologo=request.user)
     form = AtividadeCenarioForm(request.POST or None, instance=atividade)
-    formset = CenarioFormSet(request.POST or None, request.FILES or None, instance=atividade)
+    formset = CenarioFormSetEdicao(request.POST or None, request.FILES or None, instance=atividade)
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         form.save()
         formset.save()

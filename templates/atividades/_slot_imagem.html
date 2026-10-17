@@ -1,0 +1,33 @@
+<div class="slot" data-slot>
+  <div class="slot-topo">
+    <span>Imagem <span data-numero>{{ numero }}</span></span>
+    <span class="selo-certa" data-selo hidden>✔ Resposta certa</span>
+  </div>
+
+  <label class="foto-escolher" for="{{ f.imagem.id_for_label }}">
+    <img data-previa alt="" {% if f.instance.pk and f.instance.imagem %}src="{{ f.instance.imagem.url }}"{% else %}hidden{% endif %}>
+    <span class="foto-vazia" data-vazio {% if f.instance.pk and f.instance.imagem %}hidden{% endif %}>
+      <span aria-hidden="true">📷</span>Escolher imagem
+    </span>
+    <span class="foto-trocar" data-trocar {% if not f.instance.pk or not f.instance.imagem %}hidden{% endif %}>Trocar imagem</span>
+  </label>
+  {{ f.imagem }}
+  {% if f.imagem.errors %}<div class="form-error">{{ f.imagem.errors.0 }}</div>{% endif %}
+
+  <div class="form-group">
+    <label for="{{ f.emocao.id_for_label }}">{{ f.emocao.label }}</label>
+    {{ f.emocao }}
+    {% if f.emocao.errors %}<div class="form-error">{{ f.emocao.errors.0 }}</div>{% endif %}
+  </div>
+
+  {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+  <span hidden>{{ f.DELETE }}</span>
+
+  <div class="slot-acoes">
+    <div style="display:flex;gap:.3rem;">
+      <button type="button" class="mini" data-mover="-1" aria-label="Mover para a esquerda">◀</button>
+      <button type="button" class="mini" data-mover="1" aria-label="Mover para a direita">▶</button>
+    </div>
+    <button type="button" class="mini mini-remover" data-remover>🗑 Remover</button>
+  </div>
+</div>

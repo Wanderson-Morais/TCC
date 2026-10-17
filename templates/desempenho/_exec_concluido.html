@@ -1,0 +1,10 @@
+<div class="exec-retorno acerto" id="retorno-acerto" role="status" hidden>
+  <div class="exec-retorno-texto">
+    <span class="exec-retorno-emoji" id="retorno-emoji" aria-hidden="true">🎉</span>
+    <div>
+      <strong id="retorno-titulo">Muito bem!</strong>
+      <span id="retorno-mensagem">{{ mensagem }}</span>
+    </div>
+  </div>
+  {% include 'desempenho/_botao_seguir.html' with classe='btn-success' %}
+</div>

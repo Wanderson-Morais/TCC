@@ -22,9 +22,16 @@
           <tr>
             <td><a href="{% url 'detalhe_sessao' s.pk %}">{{ s.titulo }}</a></td>
             <td>{{ s.data_sessao|date:"d/m/Y"|default:'—' }}</td>
-            <td>{{ s.atividades.count }}</td>
-            <td>{{ s.criancas.count }}</td>
-            <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+            <td>{{ s.total_atividades }}</td>
+            <td>{{ s.criancas.all|length }}</td>
+            <td style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+              {% if not s.criancas.all or not s.total_atividades %}
+                <button type="button" class="btn btn-success btn-sm" disabled
+                        title="A sessão precisa de pelo menos uma criança e uma atividade">▶ Iniciar</button>
+              {% else %}
+                {# Com uma criança, já começa; com várias, abre a sessão para escolher quem vai jogar #}
+                <a href="{% url 'iniciar_sessao' s.pk %}" class="btn btn-success btn-sm">▶ Iniciar</a>
+              {% endif %}
               <a href="{% url 'detalhe_sessao' s.pk %}" class="btn btn-outline btn-sm">Ver</a>
               {% if user.role == 'psicologo' %}
                 <a href="{% url 'editar_sessao' s.pk %}" class="btn btn-outline btn-sm">Editar</a>

@@ -4,6 +4,7 @@ from django.contrib import messages
 from .models import Sessao
 from .forms import SessaoForm
 from accounts.decorators import psicologo_required, adulto_required
+from desempenho.views import sequencia_sessao, url_execucao
 
 
 @login_required
@@ -11,10 +12,13 @@ from accounts.decorators import psicologo_required, adulto_required
 def lista_sessoes(request):
     user = request.user
     if user.role == 'psicologo':
-        sessoes = Sessao.objects.filter(psicologo=user).prefetch_related('atividades', 'criancas')
+        sessoes = Sessao.objects.filter(psicologo=user)
     else:
         criancas = user.criancas_responsavel.all()
-        sessoes = Sessao.objects.filter(criancas__in=criancas).distinct().prefetch_related('atividades', 'criancas')
+        sessoes = Sessao.objects.filter(criancas__in=criancas).distinct()
+    sessoes = list(sessoes.prefetch_related('atividades', 'atividades_cartoes', 'atividades_cenarios', 'criancas'))
+    for s in sessoes:
+        s.total_atividades = len(s.atividades.all()) + len(s.atividades_cartoes.all()) + len(s.atividades_cenarios.all())
     return render(request, 'sessoes/lista.html', {'sessoes': sessoes})
 
 
@@ -42,6 +46,37 @@ def detalhe_sessao(request, pk):
         criancas = user.criancas_responsavel.all()
         sessao = get_object_or_404(Sessao, pk=pk, criancas__in=criancas)
     return render(request, 'sessoes/detalhe.html', {'sessao': sessao})
+
+
+@login_required
+@adulto_required
+def iniciar_sessao(request, pk):
+    """Play da sessão: abre a primeira atividade; as demais seguem pelo botão "Próxima"."""
+    user = request.user
+    if user.is_superuser or user.role == 'admin':
+        sessao = get_object_or_404(Sessao, pk=pk)
+        criancas = sessao.criancas.all()
+    elif user.role == 'psicologo':
+        sessao = get_object_or_404(Sessao, pk=pk, psicologo=user)
+        criancas = sessao.criancas.all()
+    else:
+        sessao = get_object_or_404(Sessao.objects.distinct(), pk=pk, criancas__responsaveis=user)
+        criancas = sessao.criancas.filter(responsaveis=user)
+
+    crianca_pk = request.GET.get('crianca')
+    if crianca_pk:
+        crianca = criancas.filter(pk=crianca_pk).first() if crianca_pk.isdigit() else None
+    else:
+        crianca = criancas.first() if criancas.count() == 1 else None
+    if not crianca:
+        messages.info(request, 'Escolha qual criança vai fazer a sessão no quadro "Iniciar Sessão Completa".')
+        return redirect('detalhe_sessao', pk=sessao.pk)
+
+    passos = sequencia_sessao(sessao)
+    if not passos:
+        messages.warning(request, 'Esta sessão não possui atividades.')
+        return redirect('detalhe_sessao', pk=sessao.pk)
+    return redirect(url_execucao(passos[0], crianca, sessao))
 
 
 @login_required
